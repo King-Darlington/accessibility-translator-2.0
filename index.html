@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accessibility Translator - Home</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+  <link href="css/main-styles.css" rel="stylesheet" />
+  <link href="css/home-styles.css" rel="stylesheet" />
+  <link href="css/Footer.css" rel="stylesheet" />
+</head>
+<body>
+  <!-- Floating Shapes Background -->
+  <div class="floating-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav id="navbar" class="navbar navbar-expand-lg navbar-mainbg fixed-top">
+    <div class="container-fluid">
+      <a class="navbar-brand navbar-logo" href="index.html">Accessibility Translator</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars text-white"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav ms-auto">
+          <div class="hori-selector">
+            <div class="left"></div>
+            <div class="right"></div>
+          </div>
+          <li class="nav-item active" data-link="home"><a class="nav-link" href="index.html"><i class="fas fa-home"></i>Home</a></li>
+          <li class="nav-item" data-link="about"><a class="nav-link" href="#about"><i class="fas fa-info-circle"></i>About</a></li>
+          <li class="nav-item" data-link="contact"><a class="nav-link" href="contact.html"><i class="fas fa-envelope"></i>Contact</a></li>
+          <li class="nav-item dropdown" id="featuresDropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-cogs"></i>Features
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="text-to-speech.html">Text-to-Speech</a></li>
+              <li><a class="dropdown-item" href="object-scanning.html">Object Scanning</a></li>
+              <li><a class="dropdown-item" href="color-filter.html">Color Filter</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown" id="colorFilterDropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-palette"></i>Color Filter
+            </a>
+            <ul class="dropdown-menu" id="colorFilterMenu">
+              <!-- Color filter buttons inserted by JS -->
+            </ul>
+          </li>
+          <li class="nav-item d-flex align-items-center">
+            <div id="voiceNavigationContainer"></div>
+            <button id="logoutBtn" class="btn btn-link text-white ms-2" aria-label="User profile and logout" title="Logout">
+              <i class="fas fa-user-circle fa-2x"></i>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Arrow Navigation Buttons -->
+  <div class="arrow-navigation">
+    <button id="scrollUpBtn" class="arrow-btn" aria-label="Scroll to top">
+      <i class="fas fa-chevron-up"></i>
+    </button>
+    <button id="scrollDownBtn" class="arrow-btn" aria-label="Scroll to bottom">
+      <i class="fas fa-chevron-down"></i>
+    </button>
+  </div>
+
+  <!-- Header Section -->
+  <section id="header">
+    <div class="container">
+      <div class="header-content">
+        <h1>Accessibility Translator</h1>
+        <p>Empowering visually impaired users with cutting-edge accessibility tools for a better digital experience.</p>
+        <div class="btn-group-header">
+          <button id="btnGetStarted" class="btn-primary-custom">
+            <span>Get Started</span>
+            <i class="fas fa-arrow-right ms-2"></i>
+          </button>
+          <button id="btnLearnMore" class="btn-outline-custom">
+            <span>Learn More</span>
+            <i class="fas fa-chevron-down ms-2"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Carousel Section -->
+  <section id="about">
+    <div class="container">
+      <div class="about-header">
+        <h2>About Our Mission</h2>
+        <p>Discover how we're making the digital world accessible for everyone</p>
+      </div>
+      
+      <div class="carousel-container">
+        <div class="about-carousel">
+          <div class="carousel-track" id="carouselTrack">
+            <!-- Slide 1 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-eye"></i> Vision for Accessibility</h3>
+              <p>We believe that digital accessibility is a fundamental right, not a privilege. Our platform bridges the gap between technology and users with visual impairments, ensuring everyone can navigate the digital world with confidence and independence.</p>
+            </div>
+            
+            <!-- Slide 2 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-microphone-alt"></i> Voice-Powered Navigation</h3>
+              <p>Experience seamless voice-controlled navigation that understands natural language commands. Our advanced speech recognition technology allows users to navigate websites, read content, and interact with applications using simple voice commands.</p>
+            </div>
+            
+            <!-- Slide 3 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-brain"></i> AI-Driven Intelligence</h3>
+              <p>Powered by cutting-edge artificial intelligence, our object scanning feature identifies and describes visual content in real-time. From reading text in images to recognizing objects and scenes, we bring visual information to life through audio.</p>
+            </div>
+            
+            <!-- Slide 4 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-adjust"></i> Customizable Visual Filters</h3>
+              <p>Everyone's visual needs are unique. Our comprehensive color filter system offers multiple contrast modes, grayscale options, and custom color schemes to enhance readability and reduce eye strain for users with various visual conditions.</p>
+            </div>
+            
+            <!-- Slide 5 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-volume-up"></i> Natural Text-to-Speech</h3>
+              <p>Convert any written content into clear, natural-sounding speech with our advanced text-to-speech engine. Adjust speed, pitch, and voice preferences to create a personalized listening experience that suits your needs.</p>
+            </div>
+            
+            <!-- Slide 6 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-mobile-alt"></i> Cross-Platform Compatibility</h3>
+              <p>Access our tools seamlessly across all your devices. Whether you're on desktop, tablet, or smartphone, our responsive design ensures consistent functionality and user experience across platforms.</p>
+            </div>
+            
+            <!-- Slide 7 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-lock"></i> Privacy & Security First</h3>
+              <p>Your privacy is paramount. All processing happens securely, and we never store personal data without explicit consent. Our commitment to data protection means you can use our tools with complete peace of mind.</p>
+            </div>
+            
+            <!-- Slide 8 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-users"></i> Community-Driven Development</h3>
+              <p>Built with input from the visually impaired community, our features are designed by listening to real user needs and experiences. We continuously evolve based on feedback to deliver truly useful accessibility solutions.</p>
+            </div>
+            
+            <!-- Slide 9 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-rocket"></i> Innovation & Research</h3>
+              <p>We're constantly pushing boundaries with the latest in accessibility technology. Our research team explores emerging technologies like haptic feedback, 3D audio, and neural interfaces to create the next generation of assistive tools.</p>
+            </div>
+            
+            <!-- Slide 10 -->
+            <div class="about-slide">
+              <h3><i class="fas fa-heart"></i> Free & Open Access</h3>
+              <p>Accessibility should never be behind a paywall. Our core features are completely free to use, ensuring that everyone, regardless of economic background, can benefit from modern accessibility technology.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="carousel-indicators" id="carouselIndicators"></div>
+        
+        <div class="carousel-controls">
+          <button class="carousel-btn" id="prevBtn" aria-label="Previous slide">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button class="carousel-btn" id="nextBtn" aria-label="Next slide">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Our Features</h2>
+        <p>Explore our comprehensive suite of accessibility tools</p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-volume-up"></i>
+          </div>
+          <h3>Text-to-Speech</h3>
+          <p>Convert any text into natural-sounding speech with customizable voices and speeds.</p>
+          <a href="text-to-speech.html" class="btn-outline-custom">Try Now</a>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-camera"></i>
+          </div>
+          <h3>Object Scanning</h3>
+          <p>Identify objects and read text from images using advanced AI technology.</p>
+          <a href="object-scanning.html" class="btn-outline-custom">Scan Now</a>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-palette"></i>
+          </div>
+          <h3>Color Filters</h3>
+          <p>Customize visual appearance with multiple contrast and color filter options.</p>
+          <a href="color-filter.html" class="btn-outline-custom">Explore</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Statistics Section -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">10K+</div>
+          <div class="stat-label">Active Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">50+</div>
+          <div class="stat-label">Languages</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">99.9%</div>
+          <div class="stat-label">Uptime</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">24/7</div>
+          <div class="stat-label">Support</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="footerContainer"></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="http://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+  <script src="https://daniellaharel.com/raindrops/js/raindrops.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/carousel.js"></script>
+  <script src="js/footer.js"></script>
+</body>
+</html>

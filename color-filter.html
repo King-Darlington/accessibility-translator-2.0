@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Color Filter - Accessibility Translator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+  <link href="css/main-styles.css" rel="stylesheet" />
+  <link href="css/color-filter.css" rel="stylesheet" />
+  <link href="css/Footer.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="floating-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+
+  <nav id="navbar" class="navbar navbar-expand-lg navbar-mainbg fixed-top">
+    <div class="container-fluid">
+      <a class="navbar-brand navbar-logo" href="index.html">Accessibility Translator</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+        <i class="fas fa-bars text-white"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav ms-auto">
+          <div class="hori-selector"><div class="left"></div><div class="right"></div></div>
+          <li class="nav-item"><a class="nav-link" href="index.html"><i class="fas fa-home"></i>Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="index.html#about"><i class="fas fa-info-circle"></i>About</a></li>
+          <li class="nav-item"><a class="nav-link" href="contact.html"><i class="fas fa-envelope"></i>Contact</a></li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="fas fa-cogs"></i>Features
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="text-to-speech.html">Text-to-Speech</a></li>
+              <li><a class="dropdown-item" href="object-scanning.html">Object Scanning</a></li>
+              <li><a class="dropdown-item" href="color-filter.html">Color Filter</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="fas fa-palette"></i>Color Filter
+            </a>
+            <ul class="dropdown-menu" id="colorFilterMenu"></ul>
+          </li>
+          <li class="nav-item d-flex align-items-center">
+            <div id="voiceNavigationContainer"></div>
+            <button id="logoutBtn" class="btn btn-link text-white ms-2">
+              <i class="fas fa-user-circle fa-2x"></i>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="arrow-navigation">
+    <button id="scrollUpBtn" class="arrow-btn"><i class="fas fa-chevron-up"></i></button>
+    <button id="scrollDownBtn" class="arrow-btn"><i class="fas fa-chevron-down"></i></button>
+  </div>
+
+  <section class="filter-section">
+    <div class="container">
+      <div class="page-header">
+        <h1>Color Filters</h1>
+        <p>Customize your visual experience with various color and contrast options</p>
+      </div>
+
+      <div class="filter-container">
+        <div class="filter-grid">
+          <div class="filter-card active" data-filter="normal">
+            <div class="filter-icon-container">
+              <i class="fas fa-eye"></i>
+            </div>
+            <h3>Normal</h3>
+            <p>Default color scheme with no filters applied</p>
+            <div class="filter-preview preview-normal">Preview</div>
+          </div>
+
+          <div class="filter-card" data-filter="invert">
+            <div class="filter-icon-container">
+              <i class="fas fa-adjust"></i>
+            </div>
+            <h3>Inverted</h3>
+            <p>Inverts all colors for improved contrast</p>
+            <div class="filter-preview preview-invert">Preview</div>
+          </div>
+
+          <div class="filter-card" data-filter="grayscale">
+            <div class="filter-icon-container">
+              <i class="fas fa-circle"></i>
+            </div>
+            <h3>Grayscale</h3>
+            <p>Removes all colors for clarity</p>
+            <div class="filter-preview preview-grayscale">Preview</div>
+          </div>
+
+          <div class="filter-card" data-filter="high-contrast">
+            <div class="filter-icon-container">
+              <i class="fas fa-sun"></i>
+            </div>
+            <h3>High Contrast</h3>
+            <p>Enhanced contrast for better visibility</p>
+            <div class="filter-preview preview-high-contrast">Preview</div>
+          </div>
+
+          <div class="filter-card" data-filter="high-contrast-black">
+            <div class="filter-icon-container">
+              <i class="fas fa-moon"></i>
+            </div>
+            <h3>High Contrast Dark</h3>
+            <p>Dark mode with high contrast</p>
+            <div class="filter-preview preview-high-contrast">Preview</div>
+          </div>
+
+          <div class="filter-card" data-filter="high-contrast-white">
+            <div class="filter-icon-container">
+              <i class="fas fa-lightbulb"></i>
+            </div>
+            <h3>High Contrast Light</h3>
+            <p>Light mode with enhanced contrast</p>
+            <div class="filter-preview preview-high-contrast">Preview</div>
+          </div>
+
+          <div class="filter-card" data-filter="sepia">
+            <div class="filter-icon-container">
+              <i class="fas fa-image"></i>
+            </div>
+            <h3>Sepia</h3>
+            <p>Warm tones for reduced eye strain</p>
+            <div class="filter-preview preview-sepia">Preview</div>
+          </div>
+
+          <div class="filter-card" data-filter="dark-mode">
+            <div class="filter-icon-container">
+              <i class="fas fa-moon"></i>
+            </div>
+            <h3>Dark Mode</h3>
+            <p>Reduced brightness for low-light environments</p>
+            <div class="filter-preview preview-normal" style="filter: brightness(50%);">Preview</div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h2>How Color Filters Help</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <h4><i class="fas fa-universal-access"></i> Visual Impairments</h4>
+              <ul>
+                <li>Assists users with color blindness</li>
+                <li>Improves readability for low vision</li>
+                <li>Reduces eye strain and fatigue</li>
+                <li>Customizable to individual needs</li>
+              </ul>
+            </div>
+
+            <div class="info-item">
+              <h4><i class="fas fa-brain"></i> Cognitive Benefits</h4>
+              <ul>
+                <li>Reduces visual distractions</li>
+                <li>Improves focus and concentration</li>
+                <li>Easier text recognition</li>
+                <li>Better information processing</li>
+              </ul>
+            </div>
+
+            <div class="info-item">
+              <h4><i class="fas fa-lightbulb"></i> Usage Tips</h4>
+              <ul>
+                <li>Try different filters to find your preference</li>
+                <li>Adjust based on lighting conditions</li>
+                <li>Combine with text-to-speech for best results</li>
+                <li>Settings persist across sessions</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="current-filter-display" id="currentFilterDisplay">
+    <i class="fas fa-palette"></i> Current Filter: <span id="filterName">Normal</span>
+  </div>
+
+  <footer id="footerContainer"></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="http://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+  <script src="https://daniellaharel.com/raindrops/js/raindrops.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/color-filter.js"></script>
+  <script src="js/footer.js"></script>
+</body>
+</html>
