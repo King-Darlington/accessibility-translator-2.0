@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Registration</title>
+</head>
+<body>
+    <h2>Test Registration Form</h2>
+    <form id="testForm">
+        <input type="text" name="name" placeholder="Name" value="Test User" required>
+        <input type="email" name="email" placeholder="Email" value="test@example.com" required>
+        <input type="password" name="password" placeholder="Password" value="Test123" required>
+        <input type="password" name="password_confirmation" placeholder="Confirm Password" value="Test123" required>
+        <button type="submit">Test Register</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch('auth/register.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                document.getElementById('result').innerHTML = 
+                    '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                    
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

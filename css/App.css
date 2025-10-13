@@ -232,6 +232,18 @@ section:first-of-type {
   margin: 0 auto;
   padding: 0 1.5rem;
 }
+.error-message {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 0.9em;
+    display: none;
+    text-align: center;
+}
+
+
 
 /* Responsive Layout */
 @media (max-width: 767px) {
