@@ -331,36 +331,13 @@ function initializePageSpecificFeatures() {
         }
     }
 
-    // Logout functionality (if element exists)
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async (e) => {
+    // Settings button functionality (if element exists)
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            try {
-                const response = await fetch('auth/logout.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Remove user data from local storage
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('colorFilter');
-                    
-                    // Redirect to login page
-                    window.location.href = 'index.html';
-                } else {
-                    console.error('Logout failed:', data.message);
-                    alert('Logout failed. Please try again.');
-                }
-            } catch (error) {
-                console.error('Logout failed:', error);
-                alert('Logout failed. Please check your connection.');
-            }
+            // Redirect to settings page
+            window.location.href = 'settings.html';
         });
     }
 }

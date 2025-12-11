@@ -173,7 +173,20 @@
   function addExtensionButton() {
     const navbar = document.querySelector('.navbar-nav');
     if (!navbar) return;
-    
+
+    // Check if extension nav link already exists
+    const existingExtensionLink = document.getElementById('extension-nav-link');
+    if (existingExtensionLink) {
+      // Update existing link with status indicator if not present
+      if (!existingExtensionLink.querySelector('.extension-status-indicator')) {
+        const indicator = document.createElement('span');
+        indicator.className = 'extension-status-indicator';
+        existingExtensionLink.appendChild(indicator);
+      }
+      updateExtensionButton(extensionDetected);
+      return;
+    }
+
     const li = document.createElement('li');
     li.className = 'nav-item';
     li.innerHTML = `
@@ -183,15 +196,15 @@
         Extension
       </a>
     `;
-    
-    // Insert before logout button
-    const logoutBtn = document.querySelector('#logoutBtn')?.parentElement;
-    if (logoutBtn) {
-      navbar.insertBefore(li, logoutBtn);
+
+    // Insert before settings button
+    const settingsBtn = document.querySelector('#settingsBtn')?.parentElement;
+    if (settingsBtn) {
+      navbar.insertBefore(li, settingsBtn);
     } else {
       navbar.appendChild(li);
     }
-    
+
     // Add click handler
     document.getElementById('extension-nav-link').addEventListener('click', (e) => {
       e.preventDefault();

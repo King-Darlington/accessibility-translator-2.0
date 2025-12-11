@@ -177,10 +177,10 @@ class AuthManager {
             }
         });
 
-        // Logout Button
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => this.handleLogout());
+        // Settings Button
+        const settingsBtn = document.getElementById('settingsBtn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => this.redirectToSettings());
         }
 
         // Social login buttons
@@ -566,13 +566,17 @@ class AuthManager {
             await this.clearAllStorage();
             this.isLoggedIn = false;
             this.user = null;
-            
+
             // Track logout event
             this.trackAuthEvent('logout');
-            
+
             // Redirect to login page
             window.location.href = 'index.html';
         }
+    }
+
+    redirectToSettings() {
+        window.location.href = 'settings.html';
     }
 
     async saveToMultipleStorages(user) {
@@ -682,20 +686,18 @@ class AuthManager {
     }
 
     updateNavigation() {
-        const logoutBtn = document.getElementById('logoutBtn');
-        const userIcon = document.querySelector('#logoutBtn i');
-        
-        if (logoutBtn && userIcon) {
+        const settingsBtn = document.getElementById('settingsBtn');
+        const userIcon = document.querySelector('#settingsBtn i');
+
+        if (settingsBtn && userIcon) {
             if (this.isLoggedIn && this.user) {
-                logoutBtn.setAttribute('title', `Logged in as ${this.user.name}`);
-                logoutBtn.setAttribute('aria-label', `User profile: ${this.user.name}`);
+                settingsBtn.setAttribute('title', `Settings - Logged in as ${this.user.name}`);
+                settingsBtn.setAttribute('aria-label', `Settings: ${this.user.name}`);
                 userIcon.style.color = '#10b981';
-                logoutBtn.innerHTML = `<i class="fas fa-user-check"></i><span>${this.user.name}</span>`;
             } else {
-                logoutBtn.setAttribute('title', 'Login');
-                logoutBtn.setAttribute('aria-label', 'Login to your account');
+                settingsBtn.setAttribute('title', 'Settings');
+                settingsBtn.setAttribute('aria-label', 'Settings');
                 userIcon.style.color = '';
-                logoutBtn.innerHTML = '<i class="fas fa-user"></i><span>Login</span>';
             }
         }
     }
