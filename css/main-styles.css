@@ -688,6 +688,10 @@ body.dark-mode {
   .navbar-logo {
     font-size: 1.2rem;
   }
+
+  .logo {
+    font-size: 1.2rem;
+  }
   
   .btn-primary-custom,
   .btn-outline-custom {
