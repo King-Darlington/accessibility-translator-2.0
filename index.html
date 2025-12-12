@@ -127,9 +127,9 @@ button:hover{
     <div class="main">
         <input type="checkbox" id="chk" aria-hidden="true">
         
-        <!-- Sign Up Form -->
-        <div class="signup">
-            <form id="signupForm">
+		<!-- Sign Up Form -->
+		<div class="signup">
+			<form id="signupForm" method="POST" action="auth/register.php">
                 <label for="chk" aria-hidden="true">Sign up</label>
                 <input type="text" name="name" id="signup-name" placeholder="User name" required>
                 <input type="email" name="email" id="signup-email" placeholder="Email" required>
@@ -140,9 +140,9 @@ button:hover{
             </form>
         </div>
         
-        <!-- Login Form -->
-        <div class="login">
-            <form id="loginForm">
+		<!-- Login Form -->
+		<div class="login">
+			<form id="loginForm" method="POST" action="auth/login.php">
                 <label for="chk" aria-hidden="true">Login</label>
                 <input type="email" name="email" id="login-email" placeholder="Email" required>
                 <input type="password" name="password" id="login-password" placeholder="Password" required>

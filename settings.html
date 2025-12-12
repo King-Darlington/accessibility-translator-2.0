@@ -88,6 +88,9 @@
                             <h4 id="profileName">Guest User</h4>
                             <p id="profileEmail">Not logged in</p>
                         </div>
+                        <button id="logoutBtn" class="logout-btn" style="display: none;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
                     </div>
 
                     <div class="setting-item">
@@ -410,68 +413,149 @@
     </main>
 
 
-    <!-- Hidden file input for import -->
     <input type="file" id="importFileInput" accept=".json" style="display: none;">
 
-</body>
-<script>
-// Immediate authentication check for settings page
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if user is logged in and update profile display
-    function updateUserProfile() {
-        const userData = localStorage.getItem('user');
-        if (userData) {
-            try {
-                const user = JSON.parse(userData);
-                const profileName = document.getElementById('profileName');
-                const profileEmail = document.getElementById('profileEmail');
-                const displayNameInput = document.getElementById('displayName');
-                const emailInput = document.getElementById('userEmail');
-                
-                if (profileName && user.name) {
-                    profileName.textContent = user.name;
-                }
-                if (profileEmail && user.email) {
-                    profileEmail.textContent = user.email;
-                }
-                if (displayNameInput && user.name) {
-                    displayNameInput.value = user.name;
-                }
-                if (emailInput && user.email) {
-                    emailInput.value = user.email;
-                }
-                
-                // Update user icon in navigation
-                const userIcon = document.querySelector('#logoutBtn i');
-                if (userIcon) {
-                    userIcon.style.color = '#10b981';
-                    userIcon.parentNode.setAttribute('title', `Logged in as ${user.name}`);
-                }
-            } catch (e) {
-                console.error('Error updating user profile:', e);
-            }
-        }
-    }
+    <!-- Hidden file input for settings import -->
+    <input type="file" id="importFileInput" accept=".json" style="display: none;" aria-hidden="true">
 
-    // Check immediately
-    updateUserProfile();
-    
-    // Also check when auth manager is ready
-    if (window.authManager) {
-        setTimeout(updateUserProfile, 1000);
-    }
-    
-    // Listen for storage changes (if user logs in/out in another tab)
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'user') {
-            updateUserProfile();
-        }
-    });
-});
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/settings.js"></script>
-    <script src="js/preferences.js"></script>
-    <script src="js/footer.js"></script>
+    <!-- External Scripts - Load in optimal order -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+            crossorigin="anonymous"
+            onerror="console.error('Failed to load Bootstrap')"></script>
+
+    <!-- Application Scripts - Load in dependency order -->
+    <script src="js/voice_commands.js" defer onerror="console.error('Failed to load voice_commands.js')"></script>
+    <script src="js/voice_loader.js" defer onerror="console.error('Failed to load voice_loader.js')"></script>
+    <script src="js/main.js" defer onerror="console.error('Failed to load main.js')"></script>
+    <script src="js/settings.js" defer onerror="console.error('Failed to load settings.js')"></script>
+    <script src="js/voice_integration.js" defer onerror="console.error('Failed to load voice_integration.js')"></script>
+    <script src="js/footer.js" defer onerror="console.error('Failed to load footer.js')"></script>
+
+    <!-- Inline initialization script -->
+    <script>
+        /**
+         * Settings Page Initialization
+         * Handles user profile updates and extension communication
+         */
+        (function() {
+            'use strict';
+
+            /**
+             * Updates user profile display from localStorage
+             * @returns {boolean} True if profile was updated successfully
+             */
+            function updateUserProfile() {
+                try {
+                    const userData = localStorage.getItem('user');
+                    if (!userData) {
+                        return false;
+                    }
+
+                    const user = JSON.parse(userData);
+                    
+                    // Update profile elements with null checks
+                    const elements = {
+                        profileName: document.getElementById('profileName'),
+                        profileEmail: document.getElementById('profileEmail'),
+                        displayName: document.getElementById('displayName'),
+                        userEmail: document.getElementById('userEmail')
+                    };
+
+                    if (elements.profileName && user.name) {
+                        elements.profileName.textContent = user.name;
+                    }
+                    if (elements.profileEmail && user.email) {
+                        elements.profileEmail.textContent = user.email;
+                    }
+                    if (elements.displayName && user.name) {
+                        elements.displayName.value = user.name;
+                    }
+                    if (elements.userEmail && user.email) {
+                        elements.userEmail.value = user.email;
+                    }
+
+                    // Update navigation user icon
+                    const userIcon = document.querySelector('#logoutBtn i');
+                    if (userIcon) {
+                        userIcon.style.color = '#10b981';
+                        const parentNode = userIcon.parentNode;
+                        if (parentNode) {
+                            parentNode.setAttribute('title', `Logged in as ${user.name}`);
+                        }
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Error updating user profile:', error);
+                    return false;
+                }
+            }
+
+            /**
+             * Handles extension message communication
+             * @param {Object} request - Message request object
+             * @param {Object} sender - Message sender
+             * @param {Function} sendResponse - Response callback
+             * @returns {boolean} True to indicate async response
+             */
+            function handleExtensionMessage(request, sender, sendResponse) {
+                try {
+                    if (request.action === 'settingsSync') {
+                        // Extension requesting current settings
+                        const settingsData = localStorage.getItem('accessibilitySettings');
+                        const settings = settingsData ? JSON.parse(settingsData) : {};
+                        sendResponse({ settings });
+                    } else if (request.action === 'settingsUpdate') {
+                        // Extension sending updated settings
+                        if (request.settings) {
+                            localStorage.setItem('accessibilitySettings', JSON.stringify(request.settings));
+                            
+                            // Update settings manager if available
+                            if (window.settingsManager && typeof window.settingsManager.initializeForm === 'function') {
+                                window.settingsManager.settings = request.settings;
+                                window.settingsManager.initializeForm();
+                            }
+                        }
+                        sendResponse({ success: true });
+                    }
+                } catch (error) {
+                    console.error('Error handling extension message:', error);
+                    sendResponse({ success: false, error: error.message });
+                }
+                return true; // Keep message channel open for async response
+            }
+
+            // Initialize on DOM ready
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initial profile update
+                updateUserProfile();
+
+                // Retry after auth manager loads
+                if (window.authManager) {
+                    setTimeout(updateUserProfile, 1000);
+                }
+
+                // Listen for cross-tab storage changes
+                window.addEventListener('storage', function(event) {
+                    if (event.key === 'user') {
+                        updateUserProfile();
+                    }
+                });
+
+                // Setup extension communication if available
+                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+                    chrome.runtime.onMessage.addListener(handleExtensionMessage);
+                }
+            });
+
+            // Handle page visibility changes
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    updateUserProfile();
+                }
+            });
+        })();
+    </script>
+</body>
 </html>
