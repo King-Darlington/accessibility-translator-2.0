@@ -15,7 +15,7 @@ class VoiceControlManager {
         
         if (this.settings.enabled) {
             this.initializeSpeechRecognition();
-        }
+        } 
     }
 
     async loadSettings() {
@@ -198,14 +198,27 @@ class VoiceControlManager {
     }
 
     processCommand(transcript) {
+        // Use the shared VoiceCommandsLib if available for robust matching
+        try {
+            if (window.VoiceCommandsLib && typeof window.VoiceCommandsLib.matchInput === 'function') {
+                const match = window.VoiceCommandsLib.matchInput(transcript);
+                const threshold = 0.55; // tuned threshold for command acceptance
+                if (match && match.score >= threshold) {
+                    this.handleMatchedCommand(match.command, match.score, match.phrase, transcript);
+                    this.speakFeedback('Command executed');
+                    return;
+                }
+            }
+        } catch (err) {
+            console.warn('VoiceCommandsLib match error', err);
+        }
+
+        // Fallback to previous matching and dynamic handlers
         let commandExecuted = false;
-        
-        // Exact match
         if (this.commands.has(transcript)) {
             this.commands.get(transcript)();
             commandExecuted = true;
         } else {
-            // Partial match with fuzzy matching
             for (const [command, handler] of this.commands) {
                 if (transcript.includes(command) || this.fuzzyMatch(transcript, command)) {
                     handler();
@@ -214,17 +227,12 @@ class VoiceControlManager {
                 }
             }
         }
-        
+
         if (!commandExecuted) {
-            // Handle dynamic commands
             this.handleDynamicCommand(transcript);
-        }
-        
-        // Provide feedback for successful commands
-        if (commandExecuted) {
-            this.speakFeedback('Command executed');
-        } else {
             this.speakFeedback(`Command not recognized: ${transcript}. Say "help" for available commands.`);
+        } else {
+            this.speakFeedback('Command executed');
         }
     }
 
@@ -238,6 +246,62 @@ class VoiceControlManager {
         );
         
         return matchingWords.length >= commandWords.length * 0.7; // 70% match threshold
+    }
+
+    // Handle command objects from VoiceCommandsLib
+    async handleMatchedCommand(cmdObj, score, matchedPhrase, transcript) {
+        if (!cmdObj || !cmdObj.action) return;
+
+        switch (cmdObj.action) {
+            case 'navigate':
+                if (cmdObj.params && cmdObj.params.target) {
+                    // Map target to existing navigation handler
+                    this.handleNavigateTo(cmdObj.params.target);
+                }
+                break;
+
+            case 'filter':
+                this.handleActivateFilter(cmdObj.params ? cmdObj.params.filter : null);
+                break;
+
+            case 'tts':
+                if (cmdObj.params.mode === 'read') this.handleReadPage();
+                else if (cmdObj.params.mode === 'stop') this.handleStopReading();
+                else if (cmdObj.params.mode === 'resume') this.handleReadPage();
+                break;
+
+            case 'scan':
+                this.handleScanPage();
+                break;
+
+            case 'accessibility':
+                // Send accessibility commands to active tab
+                chrome.runtime.sendMessage({ action: 'accessibilityCommand', command: cmdObj.params.cmd });
+                break;
+
+            case 'theme':
+                chrome.runtime.sendMessage({ action: 'applyTheme', theme: cmdObj.params.theme });
+                break;
+
+            case 'help':
+                this.showHelp();
+                break;
+
+            case 'sync':
+                chrome.runtime.sendMessage({ action: 'syncSettings' });
+                break;
+
+            case 'extension':
+                if (cmdObj.params && cmdObj.params.cmd === 'open') this.showHelp();
+                break;
+
+            case 'voice':
+                this.toggleListening();
+                break;
+
+            default:
+                console.log('Unhandled matched command action:', cmdObj.action);
+        }
     }
 
     handleDynamicCommand(transcript) {

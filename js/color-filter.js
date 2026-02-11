@@ -307,8 +307,8 @@ style.textContent = `
     }
     
     .filter-card.active {
-        border-color: #06b6d4;
-        box-shadow: 0 0 0 2px #06b6d4;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent);
     }
 `;
 document.head.appendChild(style);

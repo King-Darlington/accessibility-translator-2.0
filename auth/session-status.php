@@ -18,6 +18,7 @@ if ($action === 'status') {
         $user = getCurrentUser();
         echo json_encode([
             'authenticated' => true,
+            'loggedIn' => true,
             'user' => [
                 'id' => $user['id'],
                 'name' => $user['name'],
@@ -28,6 +29,7 @@ if ($action === 'status') {
     } else {
         echo json_encode([
             'authenticated' => false,
+            'loggedIn' => false,
             'user' => null,
             'preferences' => []
         ]);

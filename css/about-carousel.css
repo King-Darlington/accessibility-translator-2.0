@@ -1,9 +1,9 @@
 .about-slide {
-  background: linear-gradient(to right, #4f46e5, #7c3aed, #4f46e5);
+  background: linear-gradient(to right, #4f46e5, var(--primary), #4f46e5);
   opacity: 0.8;
   border-radius: 1rem;
   padding: 2rem;
-  color: white;
+  color: rgb(12, 11, 11);
   text-align: center;
   max-width: 600px;
   margin: 0 auto;

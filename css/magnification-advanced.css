@@ -1,0 +1,515 @@
+/**
+ * Advanced Magnification & Accessibility CSS
+ * Provides enhanced visual styles for magnification features
+ * Addresses: low contrast, small fonts, focus indicators, alt text display
+ */
+
+/* ============================================
+   MAGNIFICATION CONTROLS PANEL
+   ============================================ */
+
+#magnification-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 32px rgba(0, 59, 73, 0.12);
+    z-index: 9999;
+    min-width: 280px;
+    max-width: 350px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#magnification-panel.collapsed {
+    min-width: auto;
+    padding: 12px;
+}
+
+.magnification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    color: white;
+}
+
+.magnification-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.magnification-header button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.magnification-header button:hover,
+.magnification-header button:focus {
+    background: rgba(255, 255, 255, 0.3);
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+.magnification-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ============================================
+   MAGNIFICATION SLIDER & CONTROLS
+   ============================================ */
+
+.magnification-control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.magnification-control-group label {
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.magnification-control-group label .value {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+.magnification-control-group input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.magnification-control-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.magnification-control-group input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.magnification-control-group input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.magnification-control-group input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.2);
+}
+
+.magnification-control-group input[type="range"]:focus {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* ============================================
+   DROPDOWN CONTROLS FOR CONTRAST & MODE
+   ============================================ */
+
+.magnification-control-group select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.magnification-control-group select:hover,
+.magnification-control-group select:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white;
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+.magnification-control-group select option {
+    background: #1f2937;
+    color: white;
+}
+
+/* ============================================
+   BUTTON CONTROLS
+   ============================================ */
+
+.magnification-button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.magnification-btn {
+    padding: 10px 12px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.magnification-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.magnification-btn:focus {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+.magnification-btn:active {
+    transform: translateY(0);
+}
+
+.magnification-btn.active {
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   FOCUS INDICATORS & KEYBOARD NAVIGATION
+   ============================================ */
+
+:focus-visible {
+    outline: 3px solid var(--primary) !important;
+    outline-offset: 2px !important;
+    border-radius: 4px !important;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 3px solid var(--primary) !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 0 4px rgba(0, 59, 73, 0.08) !important;
+}
+
+.skip-to-main {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--primary);
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 0 0 4px 0;
+    z-index: 10000;
+    font-weight: 500;
+}
+
+.skip-to-main:focus {
+    top: 0;
+}
+
+/* ============================================
+   ALT TEXT DISPLAY
+   ============================================ */
+
+.magnification-alt-text {
+    position: absolute;
+    background-color: #fff3cd;
+    color: #333;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    border: 2px solid #ffc107;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 300px;
+    z-index: 5000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+img[alt] {
+    outline: none;
+}
+
+img:not([alt]) {
+    border: 2px solid #ff6b6b;
+    box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+}
+
+/* ============================================
+   HEADING NAVIGATION INDICATOR
+   ============================================ */
+
+.magnification-heading-indicator {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 59, 73, 0.12);
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+.magnification-heading-indicator.show {
+    opacity: 1;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    scroll-margin-top: 80px;
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+
+body.high-contrast-mode {
+    background-color: #fff !important;
+    color: #000 !important;
+}
+
+body.high-contrast-mode a {
+    color: #0066cc !important;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+body.high-contrast-mode button,
+body.high-contrast-mode input,
+body.high-contrast-mode select,
+body.high-contrast-mode textarea {
+    border: 2px solid #000 !important;
+    background-color: #f5f5f5 !important;
+    color: #000 !important;
+    font-weight: 500;
+}
+
+body.high-contrast-mode h1,
+body.high-contrast-mode h2,
+body.high-contrast-mode h3,
+body.high-contrast-mode h4,
+body.high-contrast-mode h5,
+body.high-contrast-mode h6 {
+    color: #000 !important;
+    font-weight: bold;
+    border-bottom: 2px solid #000;
+    padding-bottom: 8px;
+}
+
+body.high-contrast-mode .navbar {
+    background-color: #000 !important;
+    border-bottom: 3px solid var(--primary);
+}
+
+body.high-contrast-mode .navbar-light .navbar-nav .nav-link {
+    color: #fff !important;
+    font-weight: 500;
+}
+
+/* ============================================
+   KEYBOARD NAVIGATION INDICATORS
+   ============================================ */
+
+.keyboard-focus-ring {
+    outline: 3px solid var(--primary) !important;
+    outline-offset: 3px !important;
+    border-radius: 4px !important;
+}
+
+/* Show focus ring for keyboard navigation */
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* ============================================
+   RESPONSIVE MAGNIFICATION PANEL
+   ============================================ */
+
+@media (max-width: 768px) {
+    #magnification-panel {
+        bottom: 10px;
+        right: 10px;
+        min-width: 260px;
+        padding: 12px;
+    }
+
+    .magnification-button-group {
+        grid-template-columns: 1fr;
+    }
+
+    .magnification-heading-indicator {
+        top: 10px;
+        left: 10px;
+        font-size: 12px;
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    #magnification-panel {
+        min-width: auto;
+        max-width: calc(100vw - 20px);
+    }
+
+    .magnification-header h3 {
+        font-size: 14px;
+    }
+
+    .magnification-control-group label {
+        font-size: 12px;
+    }
+
+    .magnification-btn {
+        font-size: 11px;
+        padding: 8px 10px;
+    }
+}
+
+/* ============================================
+   PRINT STYLES FOR ACCESSIBILITY
+   ============================================ */
+
+@media print {
+    #magnification-panel,
+    .magnification-heading-indicator {
+        display: none;
+    }
+
+    img:not([alt]) {
+        border: 2px dashed #000;
+        page-break-inside: avoid;
+    }
+
+    a[href]:after {
+        content: " (" attr(href) ")";
+    }
+}
+
+/* ============================================
+   REDUCED MOTION & ANIMATIONS
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    #magnification-panel,
+    .magnification-heading-indicator {
+        transition: none !important;
+    }
+}
+
+/* ============================================
+   DARK MODE MAGNIFICATION STYLES
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .magnification-alt-text {
+        background-color: #3d3d00;
+        color: #ffeb3b;
+        border-color: #ffeb3b;
+    }
+
+    .magnification-control-group select {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+    }
+
+    .magnification-control-group select option {
+        background: #1f2937;
+        color: white;
+    }
+}
+
+/* ============================================
+   SCREEN READER ONLY TEXT
+   ============================================ */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================
+   LINK & BUTTON UNDERLINES FOR CLARITY
+   ============================================ */
+
+a {
+    text-decoration: underline;
+}
+
+button {
+    border: 2px solid currentColor;
+    background: rgba(99, 102, 241, 0.1);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+button:hover,
+button:focus {
+    background: rgba(99, 102, 241, 0.2);
+}

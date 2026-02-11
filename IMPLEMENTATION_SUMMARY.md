@@ -81,7 +81,7 @@
 ### 5. Color Scheme Updates ✅
 - **Primary Colors**: #6366f1 (Indigo)
 - **Secondary Colors**: #06b6d4 (Cyan)
-- **Accent Colors**: #a855f7 (Purple)
+- **Accent Colors**: #FFC20A (Amber)
 - **Applied to**:
   - Extension popup (popup.css)
   - Extension header and navigation

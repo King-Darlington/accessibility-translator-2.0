@@ -57,7 +57,7 @@ class ContactFormManager {
         formInputs.forEach(input => {
             input.addEventListener('focus', () => {
                 input.parentElement.style.transform = 'translateX(5px)';
-                input.parentElement.style.borderColor = '#06b6d4';
+                input.parentElement.style.borderColor = 'var(--accent)';
             });
             
             input.addEventListener('blur', () => {

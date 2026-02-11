@@ -16,7 +16,7 @@
   height: 50px;
   border: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2a49d3 0%, #d032f0 70%);
+  background: linear-gradient(135deg, #003B49 0%, #001F2A 70%);
   color: white;
   font-size: 20px;
   cursor: pointer;
@@ -27,7 +27,7 @@
   justify-content: center;
 }
 .arrow-btn:hover {
-  background: linear-gradient(135deg, #9831ff 0%, #002beb 100%);
+  background: linear-gradient(135deg, #003B49 0%, #001F2A 100%);
   transform: scale(1.1);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }

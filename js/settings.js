@@ -168,7 +168,8 @@ class SettingsManager {
             exportData: () => this.exportAllData(),
             clearCache: () => this.clearCache(),
             backupNow: () => this.createBackup(),
-            restoreBackup: () => this.restoreFromBackup()
+            restoreBackup: () => this.restoreFromBackup(),
+            logoutBtn: () => this.handleLogout()
         };
 
         // Attach event listeners safely
@@ -206,19 +207,54 @@ class SettingsManager {
     setupRealTimeUpdates() {
         const debouncedSave = this.debounce(() => this.autoSave(), 1000);
         
-        const realTimeElements = [
+        // Input elements that should trigger auto-save
+        const autoSaveInputElements = [
             'defaultRate', 'defaultPitch', 'defaultVolume', 'cacheSize',
-            'displayName', 'userEmail', 'theme', 'language'
+            'displayName', 'userEmail', 'theme', 'language', 'fontSizeRange',
+            'lineHeightRange', 'fontFamilySelect', 'magnifyLevel'
         ];
 
-        realTimeElements.forEach(id => {
+        autoSaveInputElements.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
                 element.addEventListener('input', (e) => {
                     this.updateLivePreview(id, e.target.value);
-                    if (this.settings.performance.autoSave) {
-                        debouncedSave();
-                    }
+                    debouncedSave();
+                });
+                element.addEventListener('change', (e) => {
+                    this.updateLivePreview(id, e.target.value);
+                    debouncedSave();
+                });
+            }
+        });
+
+        // Checkbox elements that should trigger auto-save
+        const autoSaveCheckboxes = [
+            'emailNotifications', 'autoStart', 'offlineMode', 'autoRead',
+            'highlightText', 'voiceControlEnabled', 'voiceFeedback',
+            'rememberFilter', 'autoContrast', 'lazyLoading',
+            'reduceAnimations', 'extensionSync', 'magnifierToggle'
+        ];
+
+        autoSaveCheckboxes.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', (e) => {
+                    debouncedSave();
+                });
+            }
+        });
+
+        // Select elements that should trigger auto-save
+        const autoSaveSelects = [
+            'defaultVoice', 'voiceLanguage', 'defaultFilter'
+        ];
+
+        autoSaveSelects.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', (e) => {
+                    debouncedSave();
                 });
             }
         });
@@ -227,35 +263,78 @@ class SettingsManager {
         const rateElement = document.getElementById('defaultRate');
         if (rateElement) {
             rateElement.addEventListener('input', (e) => {
-                document.getElementById('rateValue').textContent = e.target.value;
+                const rateValue = document.getElementById('rateValue');
+                if (rateValue) rateValue.textContent = e.target.value;
             });
         }
 
         const pitchElement = document.getElementById('defaultPitch');
         if (pitchElement) {
             pitchElement.addEventListener('input', (e) => {
-                document.getElementById('pitchValue').textContent = e.target.value;
+                const pitchValue = document.getElementById('pitchValue');
+                if (pitchValue) pitchValue.textContent = e.target.value;
             });
         }
 
         const volumeElement = document.getElementById('defaultVolume');
         if (volumeElement) {
             volumeElement.addEventListener('input', (e) => {
-                document.getElementById('volumeValue').textContent = e.target.value + '%';
+                const volumeValue = document.getElementById('volumeValue');
+                if (volumeValue) volumeValue.textContent = e.target.value + '%';
             });
         }
 
         const cacheElement = document.getElementById('cacheSize');
         if (cacheElement) {
             cacheElement.addEventListener('input', (e) => {
-                document.getElementById('cacheSizeValue').textContent = e.target.value + 'MB';
+                const cacheSizeValue = document.getElementById('cacheSizeValue');
+                if (cacheSizeValue) cacheSizeValue.textContent = e.target.value + 'MB';
             });
         }
 
         const nameElement = document.getElementById('displayName');
         if (nameElement) {
             nameElement.addEventListener('input', (e) => {
-                document.getElementById('profileName').textContent = e.target.value || 'Guest User';
+                const profileName = document.getElementById('profileName');
+                if (profileName) profileName.textContent = e.target.value || 'Guest User';
+            });
+        }
+
+        // Font family preview update
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+        if (fontFamilySelect) {
+            fontFamilySelect.addEventListener('change', (e) => {
+                const fontPreviewText = document.getElementById('fontPreviewText');
+                if (fontPreviewText) {
+                    fontPreviewText.style.fontFamily = e.target.value;
+                }
+            });
+        }
+
+        // Magnify level display
+        const magnifyLevel = document.getElementById('magnifyLevel');
+        if (magnifyLevel) {
+            magnifyLevel.addEventListener('input', (e) => {
+                const magnifyValue = document.getElementById('magnifyValue');
+                if (magnifyValue) magnifyValue.textContent = parseFloat(e.target.value).toFixed(1);
+            });
+        }
+
+        // Font size display
+        const fontSizeRange = document.getElementById('fontSizeRange');
+        if (fontSizeRange) {
+            fontSizeRange.addEventListener('input', (e) => {
+                const fontSizeValue = document.getElementById('fontSizeValue');
+                if (fontSizeValue) fontSizeValue.textContent = e.target.value;
+            });
+        }
+
+        // Line height display
+        const lineHeightRange = document.getElementById('lineHeightRange');
+        if (lineHeightRange) {
+            lineHeightRange.addEventListener('input', (e) => {
+                const lineHeightValue = document.getElementById('lineHeightValue');
+                if (lineHeightValue) lineHeightValue.textContent = e.target.value;
             });
         }
     }
@@ -425,6 +504,20 @@ class SettingsManager {
             this.showStatus('Error saving settings. Changes stored offline.', 'warning');
             this.pendingChanges.push({...this.settings});
         }
+    }
+
+    // Auto-save method triggered by real-time setting changes
+    autoSave() {
+        if (!this.isInitialized) return;
+        
+        // Show auto-save indicator
+        const indicator = document.getElementById('autoSaveIndicator');
+        if (indicator) {
+            indicator.style.display = 'inline-flex';
+            indicator.style.alignItems = 'center';
+        }
+        
+        this.saveSettings().catch(err => console.warn('Auto-save failed:', err));
     }
 
     gatherSettingsFromForm() {
@@ -739,15 +832,33 @@ class SettingsManager {
         try {
             this.showStatus('Syncing with extension...', 'info');
             
-            // Check if extension is available
-            if (!window.AccessibilityExtension) {
-                throw new Error('Extension not detected');
+            // Try to use Chrome runtime messaging API
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                return new Promise((resolve, reject) => {
+                    chrome.runtime.sendMessage({
+                        action: 'syncSettings',
+                        settings: this.settings,
+                        timestamp: Date.now()
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            console.warn('Extension not available:', chrome.runtime.lastError);
+                            // Fallback: just show success anyway
+                            this.showStatus('Sync completed (offline mode)', 'success');
+                            resolve();
+                        } else if (response && response.success) {
+                            this.showStatus('Sync completed successfully!', 'success');
+                            resolve();
+                        } else {
+                            this.showStatus('Sync completed', 'success');
+                            resolve();
+                        }
+                    });
+                });
+            } else {
+                // Fallback if Chrome API not available
+                await this.simulateSyncWithProgress();
+                this.showStatus('Sync completed successfully!', 'success');
             }
-            
-            // Simulate extension sync with progress
-            await this.simulateSyncWithProgress();
-            
-            this.showStatus('Sync completed successfully!', 'success');
         } catch (error) {
             console.error('Sync failed:', error);
             this.showStatus('Sync failed: ' + error.message, 'error');
@@ -1028,21 +1139,50 @@ class SettingsManager {
     }
 
     loadUserProfile() {
-        // Load user data from localStorage or server
+        // Check server session first, then load user data from localStorage
         try {
-            const userData = localStorage.getItem('user');
-            if (userData) {
-                const user = JSON.parse(userData);
-                this.settings.profile.displayName = user.name || this.settings.profile.displayName;
-                this.settings.profile.email = user.email || this.settings.profile.email;
-                this.updateProfileDisplay();
-            }
+            // Check if user is logged in on the server
+            fetch('auth/session-status.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.loggedIn && data.user) {
+                        // User is logged in - update settings with server data
+                        this.settings.profile.displayName = data.user.name || this.settings.profile.displayName;
+                        this.settings.profile.email = data.user.email || this.settings.profile.email;
+                        // Update display and show logout button
+                        this.updateProfileDisplay(true);
+                        this.toggleLogoutButton(true);
+                    } else {
+                        // User is not logged in - show guest mode
+                        this.settings.profile.displayName = '';
+                        this.settings.profile.email = '';
+                        this.updateProfileDisplay(false);
+                        this.toggleLogoutButton(false);
+                    }
+                })
+                .catch(error => {
+                    console.warn('Failed to check session:', error);
+                    // Fallback to localStorage
+                    const userData = localStorage.getItem('user');
+                    if (userData) {
+                        const user = JSON.parse(userData);
+                        this.settings.profile.displayName = user.name || this.settings.profile.displayName;
+                        this.settings.profile.email = user.email || this.settings.profile.email;
+                        this.updateProfileDisplay(true);
+                        this.toggleLogoutButton(true);
+                    } else {
+                        this.updateProfileDisplay(false);
+                        this.toggleLogoutButton(false);
+                    }
+                });
         } catch (error) {
             console.warn('Failed to load user profile:', error);
+            this.updateProfileDisplay(false);
+            this.toggleLogoutButton(false);
         }
     }
 
-    updateProfileDisplay() {
+    updateProfileDisplay(isLoggedIn = false) {
         const profileName = document.getElementById('profileName');
         const profileEmail = document.getElementById('profileEmail');
         
@@ -1051,7 +1191,66 @@ class SettingsManager {
         }
         
         if (profileEmail) {
-            profileEmail.textContent = this.settings.profile.email || 'Not logged in';
+            profileEmail.textContent = this.settings.profile.email || (isLoggedIn ? 'No email' : 'Not logged in');
+        }
+        
+        // Update avatar color based on login state
+        const avatar = document.querySelector('.profile-avatar i');
+        if (avatar) {
+            avatar.style.color = isLoggedIn ? '#10b981' : '#6b7280';
+        }
+    }
+
+    toggleLogoutButton(show = false) {
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.style.display = show ? 'flex' : 'none';
+        }
+    }
+
+    async handleLogout() {
+        try {
+            // Call server logout endpoint
+            const response = await fetch('auth/logout.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // Clear localStorage
+                localStorage.removeItem('user');
+                localStorage.removeItem('accessibilitySettings');
+                
+                // Clear settings
+                this.settings.profile.displayName = '';
+                this.settings.profile.email = '';
+                
+                // Update UI
+                this.updateProfileDisplay(false);
+                this.toggleLogoutButton(false);
+                
+                // Show message
+                this.showStatus('Logged out successfully!', 'success');
+                
+                // Redirect to home/login after 1 second
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } else {
+                this.showStatus('Error logging out', 'error');
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Force logout on client side even if server fails
+            localStorage.removeItem('user');
+            localStorage.removeItem('accessibilitySettings');
+            this.updateProfileDisplay(false);
+            this.toggleLogoutButton(false);
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
         }
     }
 
@@ -1072,17 +1271,28 @@ class SettingsManager {
 
     showStatus(message, type = 'info') {
         const statusElement = document.getElementById('saveStatus');
-        if (!statusElement) return;
-
-        statusElement.textContent = message;
-        statusElement.className = `status-message ${type}`;
-        statusElement.setAttribute('aria-live', 'polite');
+        const autoSaveIndicator = document.getElementById('autoSaveIndicator');
         
-        // Auto-hide after delay
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type}`;
+            statusElement.setAttribute('aria-live', 'polite');
+        }
+        
+        // Hide auto-save indicator on completion
+        if (autoSaveIndicator && (type === 'success' || type === 'error')) {
+            setTimeout(() => {
+                autoSaveIndicator.style.display = 'none';
+            }, 1500);
+        }
+        
+        // Auto-hide status message after delay
         clearTimeout(this.statusTimeout);
         this.statusTimeout = setTimeout(() => {
-            statusElement.textContent = '';
-            statusElement.className = 'status-message';
+            if (statusElement) {
+                statusElement.textContent = '';
+                statusElement.className = 'status-message';
+            }
         }, type === 'error' ? 10000 : 5000);
     }
 

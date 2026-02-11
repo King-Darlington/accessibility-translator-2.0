@@ -368,9 +368,9 @@
         simplify: true
       },
       theme: {
-        primary: '#6366f1',
-        secondary: '#06b6d4',
-        accent: '#a855f7'
+        primary: '#003B49',
+        secondary: '#003B49',
+        accent: '#FFC20A'
       }
     };
     
@@ -420,7 +420,7 @@
       }
       
       #at-extension-banner.at-banner-install .at-banner-content {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       }
       
       .at-banner-icon {
@@ -475,7 +475,7 @@
       }
       
       .at-banner-btn-install {
-        color: #667eea;
+        color: var(--primary);
       }
       
       .at-banner-close {
@@ -535,7 +535,7 @@
       }
       
       .at-extension-modal .modal-title {
-        color: #06b6d4;
+        color: var(--accent);
         font-size: 24px;
         font-weight: 600;
         display: flex;
@@ -561,7 +561,7 @@
       .extension-hero-icon {
         width: 80px;
         height: 80px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         border-radius: 20px;
         display: flex;
         align-items: center;
@@ -573,7 +573,7 @@
       }
       
       .extension-hero h3 {
-        color: #06b6d4;
+        color: var(--accent);
         font-size: 28px;
         margin-bottom: 15px;
       }
@@ -586,7 +586,7 @@
       }
       
       .extension-features h4 {
-        color: #06b6d4;
+        color: var(--accent);
         font-size: 20px;
         margin-bottom: 20px;
       }
@@ -616,7 +616,7 @@
       
       .feature-item i {
         font-size: 24px;
-        color: #667eea;
+        color: var(--primary);
         flex-shrink: 0;
       }
       
@@ -640,7 +640,7 @@
       }
       
       .extension-cta h4 {
-        color: #06b6d4;
+        color: var(--accent);
         font-size: 20px;
         margin-bottom: 20px;
         text-align: center;
@@ -717,7 +717,7 @@
       }
       
       .extension-info i {
-        color: #667eea;
+        color: var(--primary);
       }
       
       /* Animations */

@@ -1,5 +1,7 @@
 // Content script for Accessibility Translator Bubble Interface
 
+// Prevent redeclaration if the script is injected multiple times
+if (typeof window.AccessibilityBubble === 'undefined') {
 class AccessibilityBubble {
     constructor() {
         this.isActive = false;
@@ -7,111 +9,287 @@ class AccessibilityBubble {
         this.menu = null;
         this.overlay = null;
         this.currentFilter = null;
+        this.messageTimeout = 5000;
+        this.isInitialized = false;
         this.init();
     }
-
+ 
     init() {
-        this.createBubble();
-        this.setupMessageListener();
-        this.loadSettings();
+        try {
+            this.createBubble();
+            this.setupMessageListener();
+            this.loadSettings().catch(err => 
+                console.warn('Failed to load settings:', err)
+            );
+            
+            // Notify page that extension content script is active
+            this.notifyPageOfExtension();
+            
+            // Listen for messages posted by the page (from site integration)
+            window.addEventListener('message', (event) => {
+                try {
+                    if (event.source !== window) return;
+                    this.handlePageMessage(event.data || {});
+                } catch (error) {
+                    console.error('Error handling page message:', error);
+                }
+            });
+            
+            this.isInitialized = true;
+            console.log('AccessibilityBubble initialized successfully');
+        } catch (error) {
+            console.error('AccessibilityBubble initialization error:', error);
+        }
+    }
+
+    notifyPageOfExtension() {
+        try {
+            window.postMessage({ type: 'AT_EXTENSION_INSTALLED' }, '*');
+        } catch (e) {
+            console.debug('Could not notify page of extension:', e.message);
+        }
+    }
+
+    handlePageMessage(message) {
+        if (!message || typeof message !== 'object') return;
+
+        switch (message.type) {
+            case 'AT_TRIGGER_FEATURE':
+                if (message.feature && typeof message.feature === 'string') {
+                    this.handleBubbleAction(message.feature);
+                }
+                break;
+
+            case 'AT_OPEN_MODAL':
+                this.showMenu();
+                break;
+
+            case 'AT_CONFIG':
+                if (message.theme && typeof message.theme === 'object') {
+                    this.applyPageConfig(message.theme);
+                }
+                break;
+        }
+    }
+
+    applyPageConfig(theme) {
+        try {
+            if (theme.primary && /^#[0-9A-F]{6}$/i.test(theme.primary)) {
+                document.documentElement.style.setProperty('--at-primary', theme.primary);
+            }
+            if (theme.secondary && /^#[0-9A-F]{6}$/i.test(theme.secondary)) {
+                document.documentElement.style.setProperty('--at-secondary', theme.secondary);
+            }
+        } catch (error) {
+            console.warn('Error applying page config:', error);
+        }
     }
 
     createBubble() {
-        // Create bubble element
-        this.bubble = document.createElement('div');
-        this.bubble.className = 'accessibility-bubble';
-        this.bubble.innerHTML = `
-            <i class="fas fa-eye"></i>
-        `;
+        try {
+            // Create bubble element with safety checks
+            this.bubble = document.createElement('div');
+            this.bubble.className = 'accessibility-bubble';
+            this.bubble.setAttribute('role', 'toolbar');
+            this.bubble.setAttribute('aria-label', 'Accessibility Translator');
+            this.bubble.innerHTML = `
+                <button class="bubble-trigger" aria-label="Open accessibility menu" title="Accessibility Tools">
+                    <i class="fas fa-eye"></i>
+                </button>
+            `;
 
-        // Create menu
-        this.menu = document.createElement('div');
-        this.menu.className = 'bubble-menu';
-        this.menu.innerHTML = `
-            <div class="bubble-item" data-action="tts">
-                <i class="fas fa-volume-up"></i>
-                <div class="bubble-tooltip">Text to Speech</div>
-            </div>
-            <div class="bubble-item" data-action="scan">
-                <i class="fas fa-camera"></i>
-                <div class="bubble-tooltip">Object Scan</div>
-            </div>
-            <div class="bubble-item" data-action="filters">
-                <i class="fas fa-palette"></i>
-                <div class="bubble-tooltip">Color Filters</div>
-            </div>
-            <div class="bubble-item" data-action="voice">
-                <i class="fas fa-microphone"></i>
-                <div class="bubble-tooltip">Voice Control</div>
-            </div>
-            <div class="bubble-item" data-action="settings">
-                <i class="fas fa-cog"></i>
-                <div class="bubble-tooltip">Settings</div>
-            </div>
-        `;
+            // Create menu
+            this.menu = document.createElement('div');
+            this.menu.className = 'bubble-menu';
+            this.menu.setAttribute('role', 'menu');
+            this.menu.innerHTML = `
+                <div class="bubble-item" data-action="tts" role="menuitem">
+                    <i class="fas fa-volume-up"></i>
+                    <div class="bubble-tooltip">Text to Speech</div>
+                </div>
+                <div class="bubble-item" data-action="scan" role="menuitem">
+                    <i class="fas fa-camera"></i>
+                    <div class="bubble-tooltip">Object Scan</div>
+                </div>
+                <div class="bubble-item" data-action="filters" role="menuitem">
+                    <i class="fas fa-palette"></i>
+                    <div class="bubble-tooltip">Color Filters</div>
+                </div>
+                <div class="bubble-item" data-action="voice" role="menuitem">
+                    <i class="fas fa-microphone"></i>
+                    <div class="bubble-tooltip">Voice Control</div>
+                </div>
+                <div class="bubble-item" data-action="settings" role="menuitem">
+                    <i class="fas fa-cog"></i>
+                    <div class="bubble-tooltip">Settings</div>
+                </div>
+            `;
 
-        // Create overlay
-        this.overlay = document.createElement('div');
-        this.overlay.className = 'bubble-overlay';
+            // Create overlay
+            this.overlay = document.createElement('div');
+            this.overlay.className = 'bubble-overlay';
+            this.overlay.setAttribute('role', 'presentation');
 
-        // Add to page
-        document.body.appendChild(this.bubble);
-        document.body.appendChild(this.menu);
-        document.body.appendChild(this.overlay);
+            // Add to page with safety checks
+            if (document.body) {
+                document.body.appendChild(this.bubble);
+                document.body.appendChild(this.menu);
+                document.body.appendChild(this.overlay);
+            } else {
+                throw new Error('document.body not available');
+            }
 
-        this.setupEventListeners();
+            this.setupEventListeners();
+        } catch (error) {
+            console.error('Error creating bubble:', error);
+            throw error;
+        }
     }
 
     setupEventListeners() {
-        // Bubble click
-        this.bubble.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleMenu();
-        });
-
-        // Menu item clicks
-        this.menu.querySelectorAll('.bubble-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const action = item.getAttribute('data-action');
-                this.handleBubbleAction(action);
-            });
-        });
-
-        // Overlay click
-        this.overlay.addEventListener('click', () => {
-            this.hideMenu();
-        });
-
-        // Document click to close menu
-        document.addEventListener('click', (e) => {
-            if (!this.bubble.contains(e.target) && !this.menu.contains(e.target)) {
-                this.hideMenu();
+        try {
+            // Bubble click
+            if (this.bubble) {
+                const trigger = this.bubble.querySelector('.bubble-trigger');
+                if (trigger) {
+                    trigger.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.toggleMenu();
+                    });
+                }
             }
-        });
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            this.handleKeyboardShortcuts(e);
-        });
+            // Menu item clicks
+            if (this.menu) {
+                this.menu.querySelectorAll('.bubble-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const action = item.getAttribute('data-action');
+                        if (action) {
+                            this.handleBubbleAction(action);
+                        }
+                    });
+                });
+            }
+
+            // Overlay click
+            if (this.overlay) {
+                this.overlay.addEventListener('click', () => {
+                    this.hideMenu();
+                });
+            }
+
+            // Document click to close menu
+            document.addEventListener('click', (e) => {
+                if (this.bubble && this.menu) {
+                    if (!this.bubble.contains(e.target) && !this.menu.contains(e.target)) {
+                        this.hideMenu();
+                    }
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                this.handleKeyboardShortcuts(e);
+            });
+        } catch (error) {
+            console.error('Error setting up event listeners:', error);
+        }
     }
 
     setupMessageListener() {
-        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            switch (request.action) {
+        try {
+            if (!chrome || !chrome.runtime) {
+                console.warn('chrome.runtime not available');
+                return;
+            }
+
+            chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+                try {
+                    if (!request || typeof request !== 'object') {
+                        sendResponse({ success: false, error: 'Invalid request' });
+                        return;
+                    }
+
+                    this.handleContentMessage(request, sender, sendResponse);
+                } catch (error) {
+                    console.error('Message listener error:', error);
+                    try {
+                        sendResponse({ success: false, error: error.message });
+                    } catch (e) {
+                        // sendResponse might fail
+                    }
+                }
+                return true;
+            });
+        } catch (error) {
+            console.error('Error setting up message listener:', error);
+        }
+    }
+
+    handleContentMessage(request, sender, sendResponse) {
+        const action = request.action;
+
+        try {
+            switch (action) {
+                case 'ping':
+                    sendResponse({ success: true, pong: true });
+                    break;
+
                 case 'toggleBubble':
                     this.toggleMenu();
                     sendResponse({ success: true });
                     break;
 
                 case 'applyFilter':
+                    if (!request.filter) {
+                        throw new Error('No filter specified');
+                    }
                     this.applyFilter(request.filter);
                     sendResponse({ success: true });
                     break;
 
                 case 'speakText':
+                    if (!request.text) {
+                        throw new Error('No text provided');
+                    }
                     this.speakText(request.text, request.options);
                     sendResponse({ success: true });
+                    break;
+
+                case 'extractPageText':
+                    {
+                        const text = this.extractPageText();
+                        sendResponse({ success: true, text });
+                    }
+                    break;
+
+                case 'extractPageHeaders':
+                    {
+                        const headers = this.extractPageHeaders();
+                        sendResponse({ success: true, headers });
+                    }
+                    break;
+
+                case 'extractPageLinks':
+                    {
+                        const links = this.extractPageLinks();
+                        sendResponse({ success: true, links });
+                    }
+                    break;
+
+                case 'extractImageAlts':
+                    {
+                        const alts = this.extractImageAlts();
+                        sendResponse({ success: true, alts });
+                    }
+                    break;
+
+                case 'getSelectedText':
+                    {
+                        const text = window.getSelection().toString();
+                        sendResponse({ success: true, text });
+                    }
                     break;
 
                 case 'storageUpdated':
@@ -120,9 +298,44 @@ class AccessibilityBubble {
                     break;
 
                 default:
+                    sendResponse({ success: false, error: `Unknown action: ${action}` });
+            }
+        } catch (error) {
+            console.error(`Error handling action ${action}:`, error);
+            sendResponse({ success: false, error: error.message });
+        }
+    }                case 'storageUpdated':
+                    this.handleStorageUpdate(request.data);
+                    sendResponse({ success: true });
+                    break;
+
+                default:
                     console.log('Unknown action in content script:', request.action);
             }
             return true;
+        });
+    }
+
+    // Safe wrapper to send messages to background/service worker
+    sendToBackground(message) {
+        return new Promise((resolve, reject) => {
+            try {
+                if (!chrome || !chrome.runtime || !chrome.runtime.sendMessage) {
+                    return reject(new Error('chrome.runtime.sendMessage not available'));
+                }
+
+                chrome.runtime.sendMessage(message, (response) => {
+                    const err = chrome.runtime.lastError;
+                    if (err) {
+                        // Common when extension context invalidated or no listener
+                        return reject(err);
+                    }
+                    resolve(response);
+                });
+            } catch (e) {
+                // Synchronous throw (very rare)
+                reject(e);
+            }
         });
     }
 
@@ -161,6 +374,40 @@ class AccessibilityBubble {
     handleBubbleAction(action) {
         this.hideMenu();
 
+        // Map bubble actions to extension popup tab names
+        const actionToTabMap = {
+            'tts': 'tts',
+            'scan': 'scanning',
+            'filters': 'filters',
+            'voice': 'voice',
+            'settings': 'magnification' // Settings opens magnification tab by default
+        };
+
+        // Send message to extension popup to open the correct tab
+        const tabName = actionToTabMap[action];
+        if (tabName) {
+            // First, try to open the extension popup
+            chrome.action.openPopup(() => {
+                if (chrome.runtime.lastError) {
+                    // openPopup is not available on all platforms, so silently fail
+                    console.warn('Could not open extension popup:', chrome.runtime.lastError.message);
+                }
+                
+                // Send message to switch to the correct tab
+                // This works whether popup was just opened or was already open
+                chrome.runtime.sendMessage({
+                    action: 'openExtensionTab',
+                    tab: tabName
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.warn('Extension not available:', chrome.runtime.lastError.message);
+                    } else if (response && response.success) {
+                        console.log('Extension tab switched:', tabName);
+                    }
+                });
+            });
+        }
+
         switch (action) {
             case 'tts':
                 this.activateTextToSpeech();
@@ -187,12 +434,16 @@ class AccessibilityBubble {
     async activateTextToSpeech() {
         // Get page content and send to background for speech
         const pageText = this.extractPageText();
-        
-        chrome.runtime.sendMessage({
-            action: 'speakText',
-            text: pageText,
-            options: await this.getTTSSettings()
-        });
+        try {
+            await this.sendToBackground({
+                action: 'speakText',
+                text: pageText,
+                options: await this.getTTSSettings()
+            });
+        } catch (err) {
+            // Extension context may be invalidated (service worker restarted). Log and ignore.
+            console.warn('Failed to send speakText to background:', err);
+        }
     }
 
     extractPageText() {
@@ -279,25 +530,27 @@ class AccessibilityBubble {
     }
 
     toggleVoiceControl() {
-        chrome.runtime.sendMessage({
-            action: 'toggleVoiceControl'
+        this.sendToBackground({ action: 'toggleVoiceControl' }).catch(err => {
+            console.warn('toggleVoiceControl failed:', err);
         });
     }
 
     openSettings() {
-        chrome.runtime.sendMessage({
-            action: 'openOptionsPage'
+        this.sendToBackground({ action: 'openOptionsPage' }).catch(err => {
+            console.warn('openOptionsPage failed:', err);
         });
     }
 
     applyFilter(filter) {
-        chrome.runtime.sendMessage({
-            action: 'applyFilter',
-            filter: filter
+        this.sendToBackground({ action: 'applyFilter', filter }).then(() => {
+            this.currentFilter = filter;
+            this.updateActiveFilterIndicator(filter);
+        }).catch(err => {
+            console.warn('applyFilter failed:', err);
+            // Still update UI optimistically
+            this.currentFilter = filter;
+            this.updateActiveFilterIndicator(filter);
         });
-        
-        this.currentFilter = filter;
-        this.updateActiveFilterIndicator(filter);
     }
 
     updateActiveFilterIndicator(filter) {
@@ -447,16 +700,20 @@ class AccessibilityBubble {
     }
 }
 
-// Initialize the bubble when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.accessibilityBubble = new AccessibilityBubble();
-    });
-} else {
-    window.accessibilityBubble = new AccessibilityBubble();
-}
+    // Initialize the bubble when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.accessibilityBubble) window.accessibilityBubble = new AccessibilityBubble();
+        });
+    } else {
+        if (!window.accessibilityBubble) window.accessibilityBubble = new AccessibilityBubble();
+    }
 
-// Export for testing
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = AccessibilityBubble;
+    // Expose constructor to window to prevent redeclaration
+    window.AccessibilityBubble = AccessibilityBubble;
+
+    // Export for testing
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = AccessibilityBubble;
+    }
 }

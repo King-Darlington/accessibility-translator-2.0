@@ -1,0 +1,29 @@
+flowchart TB
+    subgraph Browser["Browser Environment"]
+        Popup["Extension Popup<br/>(popup.html + popup.js)"]
+        BG["Background Service<br/>Worker<br/>(background.js)"]
+        Content["Content Script<br/>(content.js)"]
+        Page["Web Page DOM<br/>(Target Site)"]
+    end
+    
+    subgraph Server["Web Server"]
+        Auth["Auth Layer<br/>(login.php, register.php)"]
+        Prefs["Preferences API<br/>(get.php, update.php)"]
+        Settings["Settings Page<br/>(settings.html + settings.js)"]
+    end
+    
+    subgraph DB["Database"]
+        Users["users table"]
+        Preferences["preferences table"]
+    end
+    
+    Popup -->|Message| BG
+    Popup -->|Display UI| User["User"]
+    User -->|Click Filter| Popup
+    BG -->|Forward to Tab| Content
+    Content -->|Apply CSS/JS| Page
+    Page -->|Display Result| User
+    Settings -->|HTTP Request| Prefs
+    Prefs -->|Query| Users
+    Prefs -->|Store/Retrieve| Preferences
+    Auth -->|Session Check| Users

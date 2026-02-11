@@ -52,21 +52,24 @@ function initializeNavigation() {
             }
         }
 
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            navItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            
-            const link = item.querySelector('a').getAttribute('href');
-            if (link) {
-                window.location.href = link;
-            }
-            
-            if (navbarCollapse && navbarCollapse.classList.contains('show')) {
-                navbarCollapse.classList.remove('show');
-            }
-            updateHoriSelector();
-        });
+        // Only add click listener to non-dropdown nav items
+        if (!item.classList.contains('dropdown')) {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                navItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                const link = item.querySelector('a').getAttribute('href');
+                if (link && link !== '#') {
+                    window.location.href = link;
+                }
+
+                if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+                    navbarCollapse.classList.remove('show');
+                }
+                updateHoriSelector();
+            });
+        }
     });
 
     updateHoriSelector();
@@ -130,7 +133,7 @@ function initializeVoiceNavigation() {
 
     voiceNavContainer.innerHTML = `
         <button id="voiceNavBtn" class="btn d-flex align-items-center gap-2 px-3 py-2" 
-                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: solid #ffffff9d; border-radius: 8px; font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease;" 
+                style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; border: solid #ffffff9d; border-radius: 8px; font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease;" 
                 aria-label="Start voice navigation" 
                 title="Start voice navigation">
             <i class="fas fa-microphone" style="font-size: 1rem;"></i>
@@ -143,30 +146,10 @@ function initializeVoiceNavigation() {
     const voiceNavStatus = document.getElementById('voiceNavStatus');
     let recognition = null;
     let isListening = false;
-    let timeoutId = null;
-
-    const navigationCommands = {
-        "home": "index.html",
-        "about": "index.html#about",
-        "text to speech": "text-to-speech.html",
-        "text-to-speech": "text-to-speech.html",
-        "tts": "text-to-speech.html",
-        "object scanning": "object-scanning.html",
-        "object-scanning": "object-scanning.html",
-        "scan": "object-scanning.html",
-        "scanning": "object-scanning.html",
-        "color filter": "color-filter.html",
-        "color-filter": "color-filter.html",
-        "gallery": "gallery.html",
-        "contact": "contact.html",
-        "help": "help"
-    };
 
     function speakMessage(message) {
         if (AppState.speechSynthesis) {
-            // Cancel any ongoing speech
             AppState.speechSynthesis.cancel();
-            
             const utterance = new SpeechSynthesisUtterance(message);
             utterance.rate = 0.9;
             utterance.pitch = 1;
@@ -175,117 +158,143 @@ function initializeVoiceNavigation() {
         }
     }
 
-    function handleVoiceCommand(command) {
-        command = command.toLowerCase().trim();
-        
-        // Help command
-        if (command === 'help') {
-            const availableCommands = Object.keys(navigationCommands)
-                .filter(cmd => cmd !== 'help')
-                .join(', ');
-            speakMessage(`Available voice commands: ${availableCommands}. Say 'Help' to hear this again.`);
-            return;
-        }
+    function executeVoiceCommand(cmdObj) {
+        if (!cmdObj || !cmdObj.action) return;
 
-        // Find matching command
-        for (const [key, page] of Object.entries(navigationCommands)) {
-            if (command.includes(key)) {
-                if (page === "help") {
-                    speakMessage("Available voice commands: Home, About, Text to Speech, Object Scanning, Color Filter, Gallery, Contact. Say 'Help' to hear this again.");
-                    return;
-                }
-                
-                speakMessage(`Navigating to ${key} page.`);
-                setTimeout(() => {
-                    if (page.includes('#')) {
-                        const [url, hash] = page.split('#');
-                        window.location.href = `${url}#${hash}`;
-                    } else {
-                        window.location.href = page;
+        switch (cmdObj.action) {
+            case 'navigate':
+                if (cmdObj.params && cmdObj.params.target) {
+                    const targetMap = {
+                        'home': 'index.html',
+                        'contact': 'contact.html',
+                        'text-to-speech': 'text-to-speech.html',
+                        'object-scanning': 'object-scanning.html',
+                        'gallery': 'gallery.html',
+                        'settings': 'settings.html'
+                    };
+                    const url = targetMap[cmdObj.params.target];
+                    if (url) {
+                        window.location.href = url;
                     }
-                }, 1000);
-                return;
-            }
+                }
+                break;
+
+            case 'filter':
+                if (cmdObj.params && cmdObj.params.filter) {
+                    applyColorFilter(cmdObj.params.filter || 'normal');
+                }
+                break;
+
+            case 'tts':
+                if (cmdObj.params.mode === 'read') {
+                    // Trigger TTS reading
+                    window.postMessage({ type: 'AT_TRIGGER_FEATURE', feature: 'tts' }, '*');
+                    speakMessage('Starting text to speech');
+                } else if (cmdObj.params.mode === 'stop') {
+                    window.postMessage({ type: 'AT_TRIGGER_FEATURE', feature: 'stop-tts' }, '*');
+                    AppState.speechSynthesis?.cancel();
+                }
+                break;
+
+            case 'accessibility':
+                switch (cmdObj.params.cmd) {
+                    case 'increaseText':
+                        document.body.style.fontSize = (parseFloat(window.getComputedStyle(document.body).fontSize) * 1.1) + 'px';
+                        break;
+                    case 'decreaseText':
+                        document.body.style.fontSize = (parseFloat(window.getComputedStyle(document.body).fontSize) / 1.1) + 'px';
+                        break;
+                    case 'zoomIn':
+                        document.body.style.transform = `scale(${(parseFloat(window.getComputedStyle(document.body).transform.match(/[\d.]+/) || 1) * 1.1)})`;
+                        break;
+                }
+                break;
+
+            case 'theme':
+                if (cmdObj.params && cmdObj.params.theme) {
+                    document.body.setAttribute('data-theme', cmdObj.params.theme);
+                    localStorage.setItem('theme', cmdObj.params.theme);
+                }
+                break;
+
+            case 'help':
+                speakMessage('Available commands: go home, text to speech, object scanning, gallery, contact, high contrast, grayscale, invert colors, dark mode, increase text, decrease text');
+                break;
         }
-        
-        speakMessage("Command not recognized. Say 'Help' to hear available commands.");
     }
 
-    // Initialize speech recognition
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
+    function handleVoiceInput(transcript) {
+        // Try to use VoiceCommandsLib for advanced matching
+        try {
+            if (window.VoiceCommandsLib && typeof window.VoiceCommandsLib.matchInput === 'function') {
+                const match = window.VoiceCommandsLib.matchInput(transcript);
+                if (match && match.score >= 0.55) {
+                    speakMessage('Command executed');
+                    executeVoiceCommand(match.command);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.warn('VoiceCommandsLib error:', err);
+        }
 
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript.trim();
-            voiceNavStatus.textContent = `Heard: "${transcript}"`;
-            handleVoiceCommand(transcript);
-        };
+        // Fallback to simple matching
+        speakMessage('Command not recognized. Say help for available commands.');
+    }
 
-        recognition.onend = () => {
-            isListening = false;
-            AppState.isVoiceNavActive = false;
-            voiceNavBtn.classList.remove('btn-danger');
-            voiceNavBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            voiceNavBtn.setAttribute('aria-label', 'Start voice navigation');
-            voiceNavBtn.setAttribute('title', 'Start voice navigation');
+    function startListening() {
+        if (!recognition) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                speakMessage('Speech recognition not supported in your browser');
+                return;
+            }
             
-            setTimeout(() => {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isListening = true;
+                voiceNavBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                voiceNavStatus.textContent = 'Listening...';
+                speakMessage('Voice navigation active. Say a command.');
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+
+                if (event.isFinal) {
+                    handleVoiceInput(transcript);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                voiceNavStatus.textContent = 'Error: ' + event.error;
+                speakMessage('Sorry, there was an error with voice recognition');
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                voiceNavBtn.style.background = 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)';
                 voiceNavStatus.textContent = '';
-            }, 3000);
-            
-            if (timeoutId) clearTimeout(timeoutId);
-        };
+            };
+        }
 
-        recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            isListening = false;
-            AppState.isVoiceNavActive = false;
-            voiceNavBtn.classList.remove('btn-danger');
-            voiceNavBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            voiceNavStatus.textContent = 'Error listening. Try again.';
-            speakMessage("Sorry, I didn't catch that. Please try again.");
-        };
-    } else {
-        voiceNavBtn.style.display = 'none';
-        voiceNavStatus.textContent = 'Voice navigation not supported';
+        recognition.start();
     }
 
     voiceNavBtn.addEventListener('click', () => {
-        if (!recognition) {
-            speakMessage("Voice navigation is not supported in your browser.");
-            return;
-        }
-
         if (isListening) {
-            recognition.stop();
-            return;
-        }
-
-        try {
-            recognition.start();
-            isListening = true;
-            AppState.isVoiceNavActive = true;
-            voiceNavBtn.classList.add('btn-danger');
-            voiceNavBtn.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
-            voiceNavBtn.setAttribute('aria-label', 'Stop voice navigation');
-            voiceNavBtn.setAttribute('title', 'Stop voice navigation');
-            voiceNavStatus.textContent = 'Listening... Speak now';
-            
-            timeoutId = setTimeout(() => {
-                if (isListening) {
-                    recognition.stop();
-                    speakMessage("Voice navigation timed out. Tap the button again to try again.");
-                }
-            }, 10000); // Increased to 10 seconds
-        } catch (error) {
-            console.error('Error starting speech recognition:', error);
+            recognition?.stop();
             isListening = false;
-            AppState.isVoiceNavActive = false;
-            speakMessage("Error starting voice navigation. Please try again.");
+        } else {
+            startListening();
         }
     });
 }
@@ -336,8 +345,20 @@ function initializePageSpecificFeatures() {
     if (settingsBtn) {
         settingsBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            // Redirect to settings page
-            window.location.href = 'settings.html';
+            e.stopPropagation();
+            
+            // If already on settings page, scroll to top of settings content
+            if (currentPage === 'settings.html') {
+                const settingsHeader = document.querySelector('.settings-header');
+                if (settingsHeader) {
+                    settingsHeader.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } else {
+                // Navigate to settings page from other pages
+                window.location.href = 'settings.html';
+            }
         });
     }
 }

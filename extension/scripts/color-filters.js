@@ -11,7 +11,7 @@ class ColorFilterManager {
         await this.loadSettings();
         this.setupMessageListener();
     }
-
+ 
     async loadSettings() {
         return new Promise((resolve) => {
             chrome.storage.sync.get(['filters', 'activeFilter'], (result) => {

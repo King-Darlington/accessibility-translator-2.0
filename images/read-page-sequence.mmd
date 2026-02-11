@@ -1,0 +1,10 @@
+sequenceDiagram
+    participant User
+    participant Popup
+    participant Content
+    participant SpeechEngine
+    User->>Popup: Click 'Read Page'
+    Popup->>Content: request page text
+    Content-->>Popup: page text
+    Popup->>SpeechEngine: send text to speak
+    SpeechEngine-->>User: audio playback

@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant User
+    participant Popup as Popup Manager
+    participant BG as Background SW
+    participant CS as Content Script
+    participant Page as Web Page
+    
+    User->>Popup: Click 'Activate' on filter card
+    Popup->>BG: sendMessage({action: 'applyFilter', filter: 'grayscale'})
+    BG->>CS: chrome.tabs.sendMessage (forward to tab)
+    CS->>Page: Inject CSS filter & update DOM
+    CS->>BG: Send success response
+    BG->>Popup: Notify success
+    Popup->>Popup: Update button state ('Active')
+    Popup->>User: Show notification 'Filter applied'

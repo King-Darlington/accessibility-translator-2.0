@@ -139,7 +139,7 @@ css/main-styles.css            - Voice styles
 ```css
 Primary (Indigo)      : #6366f1
 Secondary (Cyan)      : #06b6d4
-Accent (Purple)       : #a855f7
+Accent (Amber)        : #FFC20A
 Dark Background       : #111827
 Darker Background     : #030712
 Light Text            : #f3f4f6

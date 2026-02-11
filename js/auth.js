@@ -425,6 +425,16 @@ class AuthManager {
         
         // Track successful authentication
         this.trackAuthEvent(`${action.toLowerCase()}_success`);
+
+        // Notify other windows/tabs/pages that login occurred
+        try {
+            window.dispatchEvent(new CustomEvent('auth:login', { detail: { user } }));
+            // also write a quick timestamp to localStorage to trigger storage events
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('lastLogin', Date.now().toString());
+        } catch (e) {
+            console.warn('auth:login dispatch failed', e);
+        }
         
         // Redirect after delay
         setTimeout(() => {
@@ -566,6 +576,15 @@ class AuthManager {
             await this.clearAllStorage();
             this.isLoggedIn = false;
             this.user = null;
+
+            // Notify other windows/tabs/pages that logout occurred
+            try {
+                window.dispatchEvent(new CustomEvent('auth:logout'));
+                localStorage.removeItem('user');
+                localStorage.setItem('lastLogout', Date.now().toString());
+            } catch (e) {
+                console.warn('auth:logout dispatch failed', e);
+            }
 
             // Track logout event
             this.trackAuthEvent('logout');

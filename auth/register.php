@@ -4,7 +4,13 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 session_start();
 
-header('Content-Type: application/json');
+// Detect if this is an AJAX request or form submission
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+// Set appropriate content type
+if ($isAjax) {
+    header('Content-Type: application/json');
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -79,16 +85,23 @@ try {
         $_SESSION['user_name'] = $name;
         $_SESSION['user_email'] = $email;
         
-        echo json_encode([
-            'success' => true,
-            'message' => 'Registration successful!',
-            'user' => [
-                'id' => $userId,
-                'name' => $name,
-                'email' => $email
-            ],
-            'redirect' => 'home.html'
-        ]);
+        // For AJAX requests, return JSON; for form submissions, redirect to home
+        if ($isAjax) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Registration successful!',
+                'user' => [
+                    'id' => $userId,
+                    'name' => $name,
+                    'email' => $email
+                ],
+                'redirect' => 'home.html'
+            ]);
+        } else {
+            // Direct form submission: redirect to home.html
+            header('Location: ../home.html');
+            exit;
+        }
         
     } else {
         throw new Exception('Database error: ' . $insertStmt->error);
@@ -96,6 +109,14 @@ try {
     
 } catch (Exception $e) {
     error_log("Registration error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'error' => 'Registration failed: ' . $e->getMessage()]);
+    $errorMsg = 'Registration failed: ' . $e->getMessage();
+    if ($isAjax) {
+        echo json_encode(['success' => false, 'error' => $errorMsg]);
+    } else {
+        // For form submissions, show error and redirect back
+        $_SESSION['error'] = $errorMsg;
+        header('Location: ../index.html');
+        exit;
+    }
 }
 ?>

@@ -4,7 +4,13 @@ session_start();
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 
-header('Content-Type: application/json');
+// Detect if this is an AJAX request or form submission
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+// Set appropriate content type
+if ($isAjax) {
+    header('Content-Type: application/json');
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -52,19 +58,34 @@ try {
     $_SESSION['user_name'] = $user['name'];
     $_SESSION['user_email'] = $user['email'];
 
-    echo json_encode([
-        'success' => true, 
-        'user' => [
-            'id' => $user['id'], 
-            'name' => $user['name'], 
-            'email' => $user['email']
-        ],
-        'message' => 'Login successful',
-        'redirect' => 'home.html'
-    ]);
+    // For AJAX requests, return JSON; for form submissions, redirect to home
+    if ($isAjax) {
+        echo json_encode([
+            'success' => true, 
+            'user' => [
+                'id' => $user['id'], 
+                'name' => $user['name'], 
+                'email' => $user['email']
+            ],
+            'message' => 'Login successful',
+            'redirect' => 'home.html'
+        ]);
+    } else {
+        // Direct form submission: redirect to home.html
+        header('Location: ../home.html');
+        exit;
+    }
 
 } catch (Exception $e) {
     error_log("Login error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'error' => 'Login failed: ' . $e->getMessage()]);
+    $errorMsg = 'Login failed: ' . $e->getMessage();
+    if ($isAjax) {
+        echo json_encode(['success' => false, 'error' => $errorMsg]);
+    } else {
+        // For form submissions, show error and redirect back
+        $_SESSION['error'] = $errorMsg;
+        header('Location: ../index.html');
+        exit;
+    }
 }
 ?>

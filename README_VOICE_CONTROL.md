@@ -110,9 +110,9 @@ User Input              → Matched Command    Score
 
 ### Primary Color Scheme
 ```css
---primary: #6366f1        (Indigo)
+--primary: #003B49        (Navy)
 --secondary: #06b6d4      (Cyan)
---accent: #a855f7         (Purple)
+--accent: #FFC20A         (Amber)
 --dark-bg: #111827        (Dark)
 --darker-bg: #030712      (Very Dark)
 --text-primary: #f3f4f6   (Light Text)

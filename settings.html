@@ -8,6 +8,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link href="css/main-styles.css" rel="stylesheet">
     <link href="css/settings.css" rel="stylesheet">
+    <link href="css/magnification-advanced.css" rel="stylesheet">
+    <!-- Global Preferences Manager - Load early for immediate styling -->
+    <script src="js/preferences.js" defer></script>
 </head>
 <body data-theme="dark">
     <!-- Floating Shapes Background -->
@@ -112,6 +115,185 @@
                     </div>
                 </section>
 
+                <!-- Text & View Format Settings -->
+                <section class="settings-section">
+                    <h2><i class="fas fa-adjust"></i> Text & View Format</h2>
+
+                    <div class="setting-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="magnifierToggle">
+                            <span class="checkmark"></span>
+                            Enable Magnifier (Page Zoom)
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="magnifyLevel">Magnification Level: <span id="magnifyValue">1.0</span>x</label>
+                        <input type="range" id="magnifyLevel" min="1" max="3" step="0.1" value="1">
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="fontSizeRange">Base Font Size: <span id="fontSizeValue">16</span>px</label>
+                        <input type="range" id="fontSizeRange" min="12" max="24" step="1" value="16">
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="lineHeightRange">Line Height: <span id="lineHeightValue">1.6</span></label>
+                        <input type="range" id="lineHeightRange" min="1.2" max="2.0" step="0.1" value="1.6">
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="fontFamilySelect">Font Family</label>
+                        <select id="fontFamilySelect" class="styled-select font-preview">
+                            <option value="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" data-font-label="System UI" data-sample="AaBbCc">🔹 AaBbCc - System UI (Default)</option>
+                            <option value="'Space Grotesk', 'Inter', sans-serif" data-font-label="Space Grotesk" data-sample="AaBbCc">🔷 AaBbCc - Space Grotesk (Modern)</option>
+                            <option value="'Inter', 'Segoe UI', Roboto, sans-serif" data-font-label="Inter" data-sample="AaBbCc">🔶 AaBbCc - Inter (Clean)</option>
+                            <option value="'Georgia', 'Garamond', serif" data-font-label="Georgia" data-sample="AaBbCc">🔸 AaBbCc - Georgia (Serif Elegant)</option>
+                            <option value="'Times New Roman', 'Times', serif" data-font-label="Times New Roman" data-sample="AaBbCc">📖 AaBbCc - Times New Roman (Classic)</option>
+                            <option value="'Courier New', 'Courier', 'Menlo', monospace" data-font-label="Courier New" data-sample="AaBbCc">💻 AaBbCc - Courier New (Monospace)</option>
+                            <option value="'Arial', 'Helvetica', sans-serif" data-font-label="Arial" data-sample="AaBbCc">📝 AaBbCc - Arial (Standard)</option>
+                            <option value="'Trebuchet MS', 'Lucida Grande', sans-serif" data-font-label="Trebuchet MS" data-sample="AaBbCc">✨ AaBbCc - Trebuchet MS (Rounded)</option>
+                            <option value="'Comic Sans MS', 'Comic Sans', cursive" data-font-label="Comic Sans" data-sample="AaBbCc">🎨 AaBbCc - Comic Sans (Casual)</option>
+                            <option value="'Palatino Linotype', 'Book Antiqua', 'Palatino', serif" data-font-label="Palatino" data-sample="AaBbCc">📚 AaBbCc - Palatino (Classic Serif)</option>
+                            <option value="'Lucida Console', 'Monaco', monospace" data-font-label="Lucida Console" data-sample="AaBbCc">⌨️ AaBbCc - Lucida Console (Mono)</option>
+                            <option value="'Segoe Print', cursive" data-font-label="Segoe Print" data-sample="AaBbCc">✍️ AaBbCc - Segoe Print (Handwriting)</option>
+                        </select>
+                        <div id="fontPreviewBox" style="margin-top: 1rem; padding: 1.5rem; background: rgba(31, 41, 55, 0.5); border-radius: 10px; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 1.1rem;">
+                            <span style="display: block; margin-bottom: 0.5rem; color: #9ca3af; font-size: 0.85rem;">Preview:</span>
+                            <span id="fontPreviewText" style="display: block; font-size: 1.8rem; letter-spacing: 0.05em;">AaBbCc 123</span>
+                        </div>
+                    </div>
+
+                    <script>
+                        (function(){
+                            const root = document.documentElement;
+                            const px = (v) => (typeof v === 'number' ? v + 'px' : v.replace('px','') + 'px');
+                            const getRootVar = (name, fallback) => getComputedStyle(root).getPropertyValue(name) || fallback;
+
+                            const fontSizeRange = document.getElementById('fontSizeRange');
+                            const fontSizeValue = document.getElementById('fontSizeValue');
+                            const lineHeightRange = document.getElementById('lineHeightRange');
+                            const lineHeightValue = document.getElementById('lineHeightValue');
+                            const fontFamilySelect = document.getElementById('fontFamilySelect');
+                            const fontPreviewText = document.getElementById('fontPreviewText');
+                            const magnifierToggle = document.getElementById('magnifierToggle');
+                            const magnifyLevel = document.getElementById('magnifyLevel');
+                            const magnifyValue = document.getElementById('magnifyValue');
+
+                            // Initialize from root variables
+                            const initFont = getRootVar('--base-font-size', '16px').trim().replace('px','');
+                            const initLine = getRootVar('--base-line-height', '1.6').trim();
+                            fontSizeRange.value = parseInt(initFont,10);
+                            fontSizeValue.textContent = fontSizeRange.value;
+                            lineHeightRange.value = parseFloat(initLine);
+                            lineHeightValue.textContent = lineHeightRange.value;
+
+                            fontSizeRange.addEventListener('input', (e)=>{
+                                const v = e.target.value;
+                                root.style.setProperty('--base-font-size', v + 'px');
+                                fontSizeValue.textContent = v;
+                                localStorage.setItem('at_base_font_size', v);
+                                // Update global preferences manager
+                                if (window.globalPreferencesManager) {
+                                    window.globalPreferencesManager.updatePreference('fontSize', parseInt(v, 10));
+                                }
+                                // Trigger save
+                                if (window.settingsManager) window.settingsManager.autoSave();
+                            });
+
+                            lineHeightRange.addEventListener('input', (e)=>{
+                                const v = e.target.value;
+                                root.style.setProperty('--base-line-height', v);
+                                lineHeightValue.textContent = v;
+                                localStorage.setItem('at_base_line_height', v);
+                                // Update global preferences manager
+                                if (window.globalPreferencesManager) {
+                                    window.globalPreferencesManager.updatePreference('lineHeight', parseFloat(v));
+                                }
+                                // Trigger save
+                                if (window.settingsManager) window.settingsManager.autoSave();
+                            });
+
+                            fontFamilySelect.addEventListener('change', (e)=>{
+                                const fontValue = e.target.value;
+                                root.style.setProperty('font-family', fontValue);
+                                document.body.style.fontFamily = fontValue;
+                                localStorage.setItem('at_font_family', fontValue);
+                                
+                                // Update preview
+                                if (fontPreviewText) {
+                                    fontPreviewText.style.fontFamily = fontValue;
+                                }
+                                
+                                // Update global preferences manager
+                                if (window.globalPreferencesManager) {
+                                    window.globalPreferencesManager.updatePreference('fontFamily', fontValue);
+                                }
+                                
+                                // Trigger save
+                                if (window.settingsManager) window.settingsManager.autoSave();
+                            });
+
+                            // Magnifier controls
+                            magnifierToggle.addEventListener('change', (e)=>{
+                                const enabled = e.target.checked;
+                                window.dispatchEvent(new CustomEvent('accessibility-magnifier-toggle', {detail:{enabled}}));
+                                localStorage.setItem('at_magnifier_enabled', enabled ? '1' : '0');
+                                // Update global preferences manager
+                                if (window.globalPreferencesManager) {
+                                    window.globalPreferencesManager.updatePreference('magnifierEnabled', enabled);
+                                }
+                                // Trigger save
+                                if (window.settingsManager) window.settingsManager.autoSave();
+                            });
+
+                            magnifyLevel.addEventListener('input', (e)=>{
+                                const level = parseFloat(e.target.value);
+                                magnifyValue.textContent = level.toFixed(1);
+                                window.dispatchEvent(new CustomEvent('accessibility-magnifier-change', {detail:{level}}));
+                                localStorage.setItem('at_magnify_level', level);
+                                // Update global preferences manager
+                                if (window.globalPreferencesManager) {
+                                    window.globalPreferencesManager.updatePreference('magnifyLevel', level);
+                                }
+                                // Trigger save
+                                if (window.settingsManager) window.settingsManager.autoSave();
+                            });
+
+                            // Load persisted settings
+                            try{
+                                const savedSize = localStorage.getItem('at_base_font_size');
+                                const savedLine = localStorage.getItem('at_base_line_height');
+                                const savedFont = localStorage.getItem('at_font_family');
+                                const savedMag = localStorage.getItem('at_magnifier_enabled');
+                                const savedLevel = localStorage.getItem('at_magnify_level');
+                                
+                                if(savedSize){ root.style.setProperty('--base-font-size', savedSize + 'px'); fontSizeRange.value = savedSize; fontSizeValue.textContent = savedSize; }
+                                if(savedLine){ root.style.setProperty('--base-line-height', savedLine); lineHeightRange.value = savedLine; lineHeightValue.textContent = savedLine; }
+                                if(savedFont){ 
+                                    document.body.style.fontFamily = savedFont; 
+                                    fontFamilySelect.value = savedFont;
+                                    if(fontPreviewText) fontPreviewText.style.fontFamily = savedFont;
+                                }
+                                if(savedMag){ magnifierToggle.checked = savedMag === '1'; }
+                                if(savedLevel){ magnifyLevel.value = savedLevel; magnifyValue.textContent = parseFloat(savedLevel).toFixed(1); }
+                                
+                                // Sync with global preferences manager if available
+                                if (window.globalPreferencesManager) {
+                                    const updates = {};
+                                    if(savedSize) updates.fontSize = parseInt(savedSize, 10);
+                                    if(savedLine) updates.lineHeight = parseFloat(savedLine);
+                                    if(savedFont) updates.fontFamily = savedFont;
+                                    if(savedMag) updates.magnifierEnabled = savedMag === '1';
+                                    if(savedLevel) updates.magnifyLevel = parseFloat(savedLevel);
+                                    if (Object.keys(updates).length > 0) {
+                                        window.globalPreferencesManager.updatePreferences(updates);
+                                    }
+                                }
+                            }catch(e){console.warn('Error loading persisted settings:', e);}
+                        })();
+                    </script>
+                </section>
                 <!-- General Settings -->
                 <section class="settings-section">
                     <h2><i class="fas fa-sliders-h"></i> General Settings</h2>
@@ -400,14 +582,21 @@
 
             <!-- Action Buttons -->
             <footer class="settings-footer">
-                <button id="saveSettings" class="btn btn-primary btn-large">
-                    <i class="fas fa-save"></i>
-                    Save All Changes
-                </button>
-                <button id="cancelChanges" class="btn btn-secondary">
-                    Cancel
-                </button>
-                <span id="saveStatus" class="status-message"></span>
+                <div style="flex: 1;">
+                    <button id="saveSettings" class="btn btn-primary btn-large">
+                        <i class="fas fa-save"></i>
+                        Save All Changes
+                    </button>
+                    <button id="cancelChanges" class="btn btn-secondary">
+                        Cancel
+                    </button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span id="autoSaveIndicator" style="display: none; padding: 0.5rem 1rem; background: rgba(16, 185, 129, 0.2); border-radius: 50px; border: 1px solid rgba(16, 185, 129, 0.5); color: #10b981; font-size: 0.9rem;">
+                        <i class="fas fa-check-circle"></i> Auto-saving changes...
+                    </span>
+                    <span id="saveStatus" class="status-message"></span>
+                </div>
             </footer>
         </div>
     </main>
@@ -427,6 +616,7 @@
     <!-- Application Scripts - Load in dependency order -->
     <script src="js/voice_commands.js" defer onerror="console.error('Failed to load voice_commands.js')"></script>
     <script src="js/voice_loader.js" defer onerror="console.error('Failed to load voice_loader.js')"></script>
+    <script src="js/magnification.js" defer onerror="console.error('Failed to load magnification.js')"></script>
     <script src="js/main.js" defer onerror="console.error('Failed to load main.js')"></script>
     <script src="js/settings.js" defer onerror="console.error('Failed to load settings.js')"></script>
     <script src="js/voice_integration.js" defer onerror="console.error('Failed to load voice_integration.js')"></script>
@@ -528,18 +718,43 @@
 
             // Initialize on DOM ready
             document.addEventListener('DOMContentLoaded', function() {
-                // Initial profile update
+
+                // Initial profile update from localStorage (fast path)
                 updateUserProfile();
 
-                // Retry after auth manager loads
+                // Wait for SettingsManager to be available and call its loadUserProfile
+                (function waitForSettingsManager(retries = 0) {
+                    if (window.settingsManager && typeof window.settingsManager.loadUserProfile === 'function') {
+                        try { window.settingsManager.loadUserProfile(); } catch (e) { console.warn('settingsManager.loadUserProfile error', e); }
+                        // Also sync UI from settingsManager state if available
+                        try { window.settingsManager.updateProfileDisplay && window.settingsManager.updateProfileDisplay(); } catch (e) {}
+                        return;
+                    }
+                    if (retries < 10) {
+                        setTimeout(() => waitForSettingsManager(retries + 1), 250);
+                    }
+                })();
+
+                // Retry updating profile when authManager appears
                 if (window.authManager) {
-                    setTimeout(updateUserProfile, 1000);
+                    setTimeout(() => { updateUserProfile(); if (window.settingsManager && window.settingsManager.loadUserProfile) window.settingsManager.loadUserProfile(); }, 800);
                 }
 
                 // Listen for cross-tab storage changes
                 window.addEventListener('storage', function(event) {
                     if (event.key === 'user') {
                         updateUserProfile();
+                        if (window.settingsManager && typeof window.settingsManager.loadUserProfile === 'function') {
+                            window.settingsManager.loadUserProfile();
+                        }
+                    }
+                });
+
+                // Listen for explicit login events from other modules
+                window.addEventListener('auth:login', function(e) {
+                    updateUserProfile();
+                    if (window.settingsManager && typeof window.settingsManager.loadUserProfile === 'function') {
+                        window.settingsManager.loadUserProfile();
                     }
                 });
 

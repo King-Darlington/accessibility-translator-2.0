@@ -13,7 +13,7 @@ class TextToSpeechManager {
         await this.loadSettings();
         await this.loadVoices();
         this.setupEventListeners();
-    }
+    } 
 
     async loadSettings() {
         return new Promise((resolve) => {

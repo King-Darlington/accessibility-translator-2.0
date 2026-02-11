@@ -9,6 +9,9 @@
   <link href="css/main-styles.css" rel="stylesheet" />
   <link href="css/home-styles.css" rel="stylesheet" />
   <link href="css/Footer.css" rel="stylesheet" />
+  <link href="css/magnification-advanced.css" rel="stylesheet" />
+  <!-- Global Preferences Manager - Load early for immediate styling -->
+  <script src="js/preferences.js" defer></script>
 </head>
 <body>
   <!-- Floating Shapes Background -->
@@ -23,7 +26,7 @@
   <div class="container-fluid">
     <a class="navbar-brand logo" href="index.html" style="  font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #06b6d4 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 50%, var(--accent) 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -222,6 +225,15 @@
           <h3>Color Filters</h3>
           <p>Customize visual appearance with multiple contrast and color filter options.</p>
           <a href="color-filter.html" class="btn-outline-custom">Explore</a>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-text-height"></i>
+          </div>
+          <h3>Text & View Format</h3>
+          <p>Magnify text, adjust font sizes, change colors, and customize line height for optimal readability.</p>
+          <a href="settings.html" class="btn-outline-custom">Customize</a>
         </div>
       </div>
     </div>

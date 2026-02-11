@@ -6,9 +6,11 @@
     <title>Accessibility Translator</title>
     <link rel="stylesheet" href="styles/popup.css">
     <link rel="stylesheet" href="styles/animations.css">
+    <link rel="stylesheet" href="styles/magnification.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-    <div class="app-container">
+    <div class="app-container"> 
         <!-- Header with Logo -->
         <header class="app-header">
             <div class="logo-container">
@@ -26,7 +28,11 @@
         <!-- Main Navigation -->
         <nav class="main-nav">
             <div class="nav-selector"></div>
-            <button class="nav-item active" data-tab="tts">
+            <button class="nav-item active" data-tab="magnification">
+                <i class="fas fa-search-plus"></i>
+                <span>Magnification</span>
+            </button>
+            <button class="nav-item" data-tab="tts">
                 <i class="fas fa-volume-up"></i>
                 <span>Text to Speech</span>
             </button>
@@ -46,8 +52,11 @@
 
         <!-- Content Sections -->
         <main class="content-area">
+            <!-- Magnification Section -->
+            <section id="magnification" class="tab-content active"></section>
+
             <!-- Text to Speech Section -->
-            <section id="tts" class="tab-content active">
+            <section id="tts" class="tab-content">
                 <div class="section-header">
                     <h2>Text to Speech</h2>
                     <div class="voice-controls">
@@ -324,6 +333,7 @@
     </div>
 
     <script src="scripts/popup.js"></script>
+    <script src="scripts/magnification-ui.js"></script>
     <script src="scripts/tts.js"></script>
     <script src="scripts/object-scanning.js"></script>
     <script src="scripts/color-filters.js"></script>

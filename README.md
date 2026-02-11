@@ -1,81 +1,335 @@
-# Accessibility Translator - Complete Project Documentation
+# 🌐 Accessibility Translator 2.0
 
-## 🎨 Project Overview
+> **A comprehensive web application and Chrome extension empowering visually impaired users with advanced accessibility tools**
 
-**Accessibility Translator** is a cutting-edge web application designed to empower visually impaired users with advanced accessibility tools. Built with modern web technologies, stunning animations, and comprehensive CSS styling, this project combines functionality with aesthetic excellence.
+[![WCAG 2.1 Level AA](https://img.shields.io/badge/WCAG-2.1%20Level%20AA-success)](https://www.w3.org/WAI/WCAG21/quickref/)
+[![License](https://img.shields.io/badge/License-Educational-blue)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](STATUS)
 
 ---
 
-## 📁 Complete File Structure
+## 📋 Table of Contents
+
+- [🎯 Overview](#-overview)
+- [✨ Core Features](#-core-features)
+- [🏗️ Architecture](#️-architecture)
+- [📦 Project Structure](#-project-structure)
+- [🚀 Quick Start](#-quick-start)
+- [🔧 Installation](#-installation)
+- [📖 Usage Guide](#-usage-guide)
+- [🎤 Voice Commands](#-voice-commands)
+- [💻 Technology Stack](#-technology-stack)
+- [🌐 Browser Support](#-browser-support)
+- [♿ Accessibility Standards](#-accessibility-standards)
+- [🔐 Security](#-security)
+- [📊 Performance](#-performance)
+- [🧪 Testing](#-testing)
+- [📝 API Documentation](#-api-documentation)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [📞 Support](#-support)
+
+---
+
+## 🎯 Overview
+
+**Accessibility Translator 2.0** is a revolutionary accessibility solution addressing the digital divide for visually impaired users. According to the World Health Organization, approximately 2.2 billion people worldwide have near or distance vision impairment, yet many websites lack adequate accessibility support.
+
+### Mission
+To create an inclusive digital environment where accessibility is a fundamental feature, enabling visually impaired users to:
+- ✅ Navigate freely using voice commands
+- ✅ Understand visual content through AI-powered detection
+- ✅ Customize their viewing experience with advanced filters
+- ✅ Access information seamlessly through speech synthesis
+- ✅ Maintain privacy with client-side processing
+
+### Real-World Impact
+- **Digital Inclusion**: Makes the web accessible to millions of visually impaired users
+- **Independence**: Reduces reliance on assistive software or human assistance
+- **Productivity**: Enables faster, more efficient web browsing
+- **Education & Employment**: Opens doors to online learning and remote work
+- **Social Connection**: Facilitates participation in online communities
+
+---
+
+## ✨ Core Features
+
+### 🎙️ Voice Control (30+ Commands)
+- **Hands-free navigation** across any website
+- **Fuzzy matching algorithm** handles typos and natural language
+- **Offline-first design** works without internet connectivity
+- **Intelligent command parsing** using Levenshtein distance + token overlap
+- **Real-time feedback** with voice announcements
+
+**Example Commands:**
+```
+"read page" → Reads page content aloud
+"dark mode" → Applies dark theme
+"increase text" → Increases font size
+"go home" → Navigates to home page
+"activate color filter" → Applies accessibility filter
+```
+
+### 🎵 Text-to-Speech (TTS)
+- **Natural voice selection** with multiple voice options
+- **Speed and pitch controls** for personalized listening
+- **Play, pause, stop** functionality
+- **Keyboard shortcuts** for quick access
+- **Multi-language support** with browser Web Speech API
+
+### 🔍 Object Scanning & OCR
+- **Dual mode**: Upload images or capture from camera
+- **AI Object Detection** using TensorFlow.js + COCO-SSD
+- **Optical Character Recognition (OCR)** with Tesseract.js
+- **Confidence scores** and detailed descriptions
+- **Voice announcements** of detected objects and text
+- **Drag & drop support** for easy image upload
+
+### 🎨 Color Filters (8 Modes)
+1. **Normal** - Default view
+2. **Grayscale** - Removes all color
+3. **High Contrast** - Enhanced contrast for low-vision users
+4. **Invert** - Inverts all colors
+5. **Sepia** - Warm filter for eye strain reduction
+6. **Deuteranopia** - Red-green colorblind assistance
+7. **Protanopia** - Green-red colorblind assistance
+8. **Tritanopia** - Blue-yellow colorblind assistance
+
+**Features:**
+- Live previews before applying
+- Persistent across sessions (localStorage)
+- Keyboard shortcuts (Alt + 1-8)
+- Smooth transitions
+
+### 🌐 Chrome Extension Integration
+- Works on any website with floating accessibility bubble
+- Manifest V3 compliant
+- Seamless synchronization with web app
+- Service worker background processing
+- Content script injection
+- Storage persistence
+
+### 🔐 User Authentication & Preferences
+- Secure login system with session management
+- Persistent preference storage
+- Cross-platform synchronization
+- User profile customization
+- Privacy-focused design
+
+### 📱 Responsive Design
+- **Mobile-first approach** for all screen sizes
+- **Touch-friendly** interface elements
+- **Gesture support** (swipe, tap, long-press)
+- **Tablet optimization** with adaptive layouts
+- **Desktop** full-featured experience
+
+### 🎠 Interactive Components
+- **Auto-playing carousel** with keyboard controls
+- **Animated navbar** with smooth transitions
+- **Floating shapes** and CSS animations
+- **Interactive footer** with responsive grid
+- **Smooth page transitions**
+
+---
+
+## 🏗️ Architecture
+
+### System Architecture Diagram
 
 ```
-accessibility-translator/
-├── index.html
-├── text-to-speech.html
-├── object-scanning.html
-├── color-filter.html
-├── contact.html
+┌──────────────────────────────────┐
+│     Main Website (PHP/MySQL)     │
+├──────────────────────────────────┤
+│  • index.html / settings.html    │
+│  • voice_integration.js          │
+│  • voice_commands.js (Library)   │
+│  • color-filter.js               │
+│  • text-to-speech.js             │
+│  • PHP Backend (Auth/Prefs)      │
+└──────────────┬───────────────────┘
+               │ Window.postMessage
+               ↓
+┌──────────────────────────────────┐
+│    Chrome Extension (Manifest V3)│
+├──────────────────────────────────┤
+│  • background.js (Service Worker)│
+│  • content.js (Content Script)   │
+│  • popup.html / popup.js         │
+│  • Voice/Color/TTS Handlers      │
+└──────────────────────────────────┘
+               │
+               ↓
+┌──────────────────────────────────┐
+│    Browser APIs & Libraries      │
+├──────────────────────────────────┤
+│  • Web Speech API                │
+│  • Web Audio API                 │
+│  • Canvas API                    │
+│  • Local Storage                 │
+│  • TensorFlow.js (ML)            │
+│  • Tesseract.js (OCR)            │
+└──────────────────────────────────┘
+```
+
+### Data Flow: Voice Command
+
+```
+User Speaks → Web Speech API
+    ↓
+voice_integration.js (Listener)
+    ↓
+VoiceCommandsLib.matchInput() (Fuzzy Matching)
+    ↓
+Command Execution Layer
+    ├─ Navigation Commands
+    ├─ Filter Commands
+    ├─ TTS Commands
+    ├─ Theme Commands
+    └─ Accessibility Commands
+    ↓
+User Feedback (Visual + Audio)
+```
+
+---
+
+## 📦 Project Structure
+
+```
+accessibility-translator-2.0/
+├── 📄 Documentation
+│   ├── README.md (this file)
+│   ├── QUICK_START.md (setup guide)
+│   ├── ARCHITECTURE.md (detailed architecture)
+│   ├── DARLINGTON_HND_SWE_REPORT.md (comprehensive report)
+│   ├── VOICE_COMMANDS_GUIDE.md (voice command reference)
+│   ├── ACCESSIBILITY_FEATURES_GUIDE.md
+│   └── CONVERSION_GUIDE.md
 │
-├── css/
-│   ├── main-styles.css          (Enhanced navbar, buttons, floating shapes)
-│   ├── home-styles.css          (Carousel, hero section with images)
-│   ├── text-to-speech.css       (TTS interface styling)
-│   ├── object-scanning.css      (AI detection interface)
-│   ├── color-filter.css         (Filter cards and previews)
-│   ├── contact.css              (Contact form and info)
-│   └── Footer.css               (Enhanced footer with button styling)
-|-- extension/
-|     |--assets/
-|        |--icons/
-|           |--bubble-icon.png
-|           |--icon16.png
-|           |--icon48.png
-|           |--icon128.png
-|        |--images/
-|           |--logo.svg
-|           |--wave-animation.gif
-|        |--sounds/
-|           |--activate.mp3
-|           |--deactivate.mp3
-|     |--libs/
-|        |--raindrops.js
-|        |--tensorflow.js
-|        |--tesseract.js
-|     |--scripts/
-|        |--color-filters.js
-|        |--object-scanning.js
-|        |--popup.js
-|        |--tts.js
-|        |--voice-control.js
-|     |--styles/
-|        |--animation.css
-|        |--bubble.css
-|        |--popup.css
-|     |--background.js
-|     |--content.js
-|     |--manifest.json
-|     |--popup.html
+├── 🏠 Main Website
+│   ├── index.html (landing page)
+│   ├── home.html (home page)
+│   ├── settings.html (preferences & voice control)
+│   ├── text-to-speech.html (TTS interface)
+│   ├── object-scanning.html (AI scanning)
+│   ├── color-filter.html (filter gallery)
+│   ├── contact.html (contact form)
+│   ├── gallery.html (image gallery)
+│   └── test-*.html (test pages)
 │
-├── js/
-│   ├── main.js                  (Core navigation & voice control)
-│   ├── carousel.js              (Auto-carousel 3s intervals)
-│   ├── footer.js                (Dynamic footer loading)
-│   ├── text-to-speech.js        (Speech synthesis)
-│   ├── object-scanning.js       (TensorFlow & Tesseract)
-│   ├── color-filter.js          (Filter management)
-│   └── contact.js               (Form validation)
+├── 📁 css/
+│   ├── main-styles.css (core styling)
+│   ├── home-styles.css (carousel styles)
+│   ├── text-to-speech.css
+│   ├── object-scanning.css
+│   ├── color-filter.css
+│   ├── contact.css
+│   ├── footer-styles-fixed.css
+│   ├── magnification-advanced.css
+│   └── custom.css
 │
-└── assets/
-    ├── one.jpg                   (Header background - vision/magnifying glass)
-    ├── two.jpg                   (Eye close-up)
-    ├── three.jpg                 (Light bulb)
-    ├── four.jpg                  (Blurred corridor)
-    ├── five.jpg                  (Color spectrum face)
-    ├── six.jpg                   (Person reading)
-    ├── seven.jpg                 (Visually impaired badges)
-    ├── eight.jpg                 (Rainbow eye)
-    ├── nine.jpg                  (Technology interface)
-    └── ten.jpg                   (Face recognition)
+├── 📁 js/
+│   ├── main.js (global initialization)
+│   ├── voice_commands.js (command library)
+│   ├── voice_integration.js (main integration)
+│   ├── voice_loader.js (debug utilities)
+│   ├── color-filter.js (filter logic)
+│   ├── text-to-speech.js (TTS handler)
+│   ├── object-scanning.js (OCR/object detection)
+│   ├── magnification.js (text magnification)
+│   ├── carousel.js (carousel functionality)
+│   ├── auth.js (authentication)
+│   ├── settings.js (preferences management)
+│   ├── preferences.js (preference sync)
+│   ├── extension-integration.js (extension bridge)
+│   ├── footer.js (footer interactivity)
+│   ├── contact.js (form handling)
+│   └── voice_loader.js
+│
+├── 📁 extension/ (Chrome Extension V3)
+│   ├── manifest.json (extension configuration)
+│   ├── background.js (service worker)
+│   ├── content.js (content script)
+│   ├── popup.html (popup interface)
+│   │
+│   ├── 📁 assets/
+│   │   ├── 📁 icons/
+│   │   │   ├── icon16.png
+│   │   │   ├── icon48.png
+│   │   │   └── icon128.png
+│   │   ├── 📁 images/
+│   │   │   ├── logo.svg
+│   │   │   └── (other images)
+│   │   └── 📁 sounds/
+│   │       └── notification.mp3
+│   │
+│   ├── 📁 libs/
+│   │   ├── tensorflow.js
+│   │   ├── tesseract.js
+│   │   └── raindrops.js
+│   │
+│   ├── 📁 scripts/
+│   │   ├── popup.js (UI controller)
+│   │   ├── voice_commands.js (command lib)
+│   │   ├── voice-control.js (handler)
+│   │   ├── color-filters.js (filter logic)
+│   │   ├── tts.js (text-to-speech)
+│   │   ├── object-scanning.js (scanning)
+│   │   ├── magnification-ui.js
+│   │   └── voice_integration.js
+│   │
+│   └── 📁 styles/
+│       ├── popup.css (primary colors)
+│       ├── bubble.css (floating bubble)
+│       ├── magnification.css
+│       ├── animation.css
+│       └── (other styles)
+│
+├── 📁 auth/
+│   ├── login.php
+│   ├── logout.php
+│   ├── register.php
+│   ├── session.php
+│   └── session-status.php
+│
+├── 📁 api/
+│   ├── 📁 preferences/
+│   │   ├── get.php
+│   │   └── update.php
+│   ├── 📁 settings/
+│   │   ├── get.php
+│   │   ├── save.php
+│   │   └── sync.php
+│   └── (other API endpoints)
+│
+├── 📁 config/
+│   └── database.php (MySQL config)
+│
+├── 📁 includes/
+│   ├── functions.php (utility functions)
+│   ├── session.php (session handler)
+│   └── validation.php (input validation)
+│
+├── 📁 images/
+│   ├── architecture.mmd
+│   ├── class-diagram.mmd
+│   ├── filter-sequence.mmd
+│   └── (other diagrams)
+│
+├── 📁 tools/
+│   └── contrast_audit.py (accessibility audit)
+│
+├── 📄 Database
+│   ├── at.sql (database schema)
+│   └── (database exports)
+│
+├── 🔧 Configuration
+│   ├── manifest.json (main extension)
+│   └── .env (environment variables - optional)
+│
+└── 📊 Reports
+    ├── audit_results.json
+    ├── IMPLEMENTATION_SUMMARY.md
+    └── PROJECT_COMPLETION.md
 ```
 
 ---
@@ -352,7 +606,7 @@ Images 4, 6, 7, 9, and 10 are prepared for:
 Primary: #6366f1 (Indigo)
 Primary Dark: #4f46e5
 Secondary: #06b6d4 (Cyan)
-Accent: #a855f7 (Purple)
+Accent: #FFC20A (Amber)
 Dark BG: #111827
 Darker BG: #030712
 Text Primary: #f3f4f6

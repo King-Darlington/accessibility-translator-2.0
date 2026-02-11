@@ -1,0 +1,59 @@
+classDiagram
+    class User {
+        -id: int
+        -name: string
+        -email: string
+        -password_hash: string
+        -created_at: timestamp
+    }
+    
+    class Preferences {
+        -id: int
+        -user_id: int
+        -preferences_json: JSON
+        -last_updated: timestamp
+    }
+    
+    class SettingsManager {
+        -settings: Object
+        -isOnline: boolean
+        -dbName: string
+        +init(): void
+        +loadSettings(): Promise
+        +saveSettings(): Promise
+        +loadUserProfile(): void
+        +toggleLogoutButton(state): void
+        +handleLogout(): void
+    }
+    
+    class PopupManager {
+        -currentTab: Tab
+        -activeTab: string
+        +init(): Promise
+        +switchTab(tabName): void
+        +applyColorFilter(filter): Promise
+        +readEntirePage(): Promise
+        +handleQuickAction(action): Promise
+    }
+    
+    class ContentScript {
+        -filterState: Object
+        +applyFilter(filter): void
+        +extractPageText(): string
+        +respondToMessages(): void
+        +speakText(text): void
+    }
+    
+    class AuthService {
+        +login(email, password): Promise
+        +register(name, email, password): Promise
+        +logout(): void
+        +validateSession(): boolean
+    }
+    
+    SettingsManager <|-- User: manages
+    Preferences <|-- User: belongs to
+    PopupManager --> ContentScript: communicates via
+    PopupManager --> AuthService: uses for auth
+    AuthService --> User: queries/modifies
+    ContentScript --> Preferences: applies

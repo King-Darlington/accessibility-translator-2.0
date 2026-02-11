@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant User
+    participant LoginPage as Login Form
+    participant WebServer as Web Server
+    participant DB as Database
+    participant SettingsPage as Settings Page
+    
+    User->>LoginPage: Enter credentials + submit
+    LoginPage->>WebServer: POST /auth/login.php {email, password}
+    WebServer->>DB: Query user by email
+    DB-->>WebServer: User record
+    WebServer->>WebServer: Verify password_verify()
+    WebServer->>WebServer: Create session + localStorage
+    WebServer-->>LoginPage: Redirect /home.html + Set-Cookie
+    LoginPage->>LoginPage: Store in localStorage
+    User->>SettingsPage: Navigate to settings.html
+    SettingsPage->>WebServer: GET /api/preferences/get.php (session token)
+    WebServer->>DB: Query preferences where user_id
+    DB-->>WebServer: preferences JSON
+    WebServer-->>SettingsPage: Return JSON
+    SettingsPage->>SettingsPage: Populate form fields
+    SettingsPage->>SettingsPage: Display logged-in user name

@@ -340,10 +340,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function extractText() {
-        if (!elements.ocrPreviewImage.src || elements.ocrPreviewImage.src === window.location.href) {
-            showError('Please select an image first.');
-            return;
-        }
+        // Show Coming Soon message
+        showComingSoonMessage('Document Upload', 'The document upload feature will be available soon. We are working on enhanced text extraction and document processing capabilities.');
+        return;
 
         if (ScanState.isOCRExtracting) {
             return;
@@ -441,6 +440,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function showError(message) {
         alert(message); // Replace with better error display
         console.error('Scanning Error:', message);
+    }
+
+    function showComingSoonMessage(featureName, description) {
+        elements.ocrResults.style.display = 'block';
+        elements.ocrResults.innerHTML = `
+            <div class="coming-soon-container" style="
+                background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 12px;
+                text-align: center;
+                margin: 20px 0;
+            ">
+                <div style="font-size: 48px; margin-bottom: 15px;">🚀</div>
+                <h3 style="margin-bottom: 10px; font-size: 1.5rem;">${featureName} Coming Soon</h3>
+                <p style="margin: 0; font-size: 1.1rem; line-height: 1.6;">${description}</p>
+                <p style="margin-top: 15px; font-size: 0.9rem; opacity: 0.9;">Thank you for your patience!</p>
+            </div>
+        `;
     }
 
     function speakText(text) {

@@ -15,10 +15,10 @@
 }
 
 footer {
-  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(3, 7, 18, 0.98) 100%);
-  backdrop-filter: blur(20px);
-  border-top: 2px solid rgba(99, 102, 241, 0.4);
-  color: #f3f4f6;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  backdrop-filter: blur(6px);
+  border-top: 2px solid rgba(0, 59, 73, 0.08);
+  color: var(--text-primary);
   position: relative;
 }
 
@@ -29,7 +29,7 @@ footer::before {
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #667eea, #764ba2, #06b6d4, transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), var(--accent), transparent);
   animation: borderFlow 3s linear infinite;
 }
 
@@ -55,7 +55,7 @@ footer::before {
   right: 0;
   bottom: 0;
   background: radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.05) 0%, transparent 70%),
-              radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
+              radial-gradient(circle at 80% 50%, rgba(0, 59, 73, 0.05) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -66,7 +66,7 @@ footer::before {
 }
 
 .footer-title {
-  color: #06b6d4;
+  color: var(--primary);
   font-size: 1.3rem;
   font-weight: 600;
   margin-bottom: 25px;
@@ -82,9 +82,9 @@ footer::before {
   left: 0;
   width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, #6366f1, #a855f7);
+  background: linear-gradient(90deg, var(--primary), var(--accent));
   border-radius: 2px;
-  box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 0 10px rgba(0, 59, 73, 0.08);
 }
 
 .footer-title::before {
@@ -94,7 +94,7 @@ footer::before {
   left: 0;
   width: 30px;
   height: 3px;
-  background: #06b6d4;
+  background: var(--primary);
   animation: titleGlow 2s ease-in-out infinite;
 }
 
@@ -125,14 +125,14 @@ footer::before {
 }
 
 .gem-contacts-item:hover {
-  color: #f3f4f6;
-  background: rgba(102, 126, 234, 0.1);
+  color: var(--text-primary);
+  background: rgba(0, 59, 73, 0.04);
   transform: translateX(5px);
 }
 
 .gem-contacts-item i {
   margin-right: 10px;
-  color: #06b6d4;
+  color: var(--primary);
   font-size: 16px;
   transition: all 0.3s ease;
 }
@@ -156,7 +156,7 @@ footer::before {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #667eea, #06b6d4);
+  background: linear-gradient(90deg, var(--primary), var(--accent));
   transition: width 0.3s ease;
 }
 
@@ -165,7 +165,7 @@ footer::before {
 }
 
 .gem-contacts-item a:hover {
-  color: #06b6d4;
+  color: var(--accent);
 }
 
 .posts .gem-pp-posts-item a {
@@ -190,7 +190,7 @@ footer::before {
 }
 
 .posts .gem-pp-posts-item a:hover {
-  color: #06b6d4;
+  color: var(--accent);
   transform: translateX(5px);
 }
 
@@ -229,7 +229,7 @@ footer::before {
 .contact-form-footer input:focus,
 .contact-form-footer textarea:focus {
   outline: none;
-  border-color: #06b6d4;
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2),
               0 0 15px rgba(6, 182, 212, 0.3);
   background-color: rgba(31, 41, 55, 0.9);
@@ -239,7 +239,7 @@ footer::before {
 /* Enhanced Submit Button */
 .contact-form-footer input[type="submit"],
 .wpcf7-form-control.wpcf7-submit {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
   border: none;
   cursor: pointer;
@@ -277,7 +277,7 @@ footer::before {
   transform: translateY(-3px) scale(1.05);
   box-shadow: 0 8px 30px rgba(102, 126, 234, 0.7),
               0 0 40px rgba(102, 126, 234, 0.4);
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
 }
 
 .contact-form-footer input[type="submit"]:active,
@@ -314,7 +314,7 @@ footer::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(168, 85, 247, 0.6) 100%);
+  background: linear-gradient(135deg, rgba(0, 59, 73, 0.6) 0%, rgba(0, 59, 73, 0.35) 100%);
   opacity: 0;
   transition: all 0.4s ease;
   border-radius: 10px;
@@ -344,7 +344,7 @@ footer::before {
 }
 
 .footer-site-info a {
-  color: #06b6d4;
+  color: var(--accent);
   text-decoration: none;
   transition: all 0.3s ease;
   position: relative;
@@ -357,7 +357,7 @@ footer::before {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #667eea, #06b6d4);
+  background: linear-gradient(90deg, var(--primary), var(--accent));
   transition: width 0.3s ease;
 }
 
@@ -366,7 +366,7 @@ footer::before {
 }
 
 .footer-site-info a:hover {
-  color: #0891b2;
+  color: var(--accent-dark);
 }
 
 .site-navigation.footer-navigation {
@@ -411,7 +411,7 @@ footer::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.06) 0%, rgba(0, 59, 73, 0.06) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 5px;
@@ -422,7 +422,7 @@ footer::before {
 }
 
 .footer-menu a:hover {
-  color: #06b6d4;
+  color: var(--accent);
   transform: translateY(-2px);
 }
 
@@ -476,9 +476,9 @@ footer::before {
 
 .socials-item:hover {
   box-shadow: 0 0 25px rgba(102, 126, 234, 0.8),
-              0 0 50px rgba(168, 85, 247, 0.5);
+              0 0 50px rgba(0, 59, 73, 0.25);
   border-color: rgba(6, 182, 212, 0.8);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(0, 59, 73, 0.12) 100%);
   transform: translateY(-5px) scale(1.1) rotate(10deg);
 }
 
@@ -608,3 +608,4 @@ footer p, footer li {
     display: none;
   }
 }
+
