@@ -842,7 +842,6 @@ class PopupManager {
         }
     }
 }
-}
 
 // Initialize popup when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {

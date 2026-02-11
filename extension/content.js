@@ -304,16 +304,6 @@ class AccessibilityBubble {
             console.error(`Error handling action ${action}:`, error);
             sendResponse({ success: false, error: error.message });
         }
-    }                case 'storageUpdated':
-                    this.handleStorageUpdate(request.data);
-                    sendResponse({ success: true });
-                    break;
-
-                default:
-                    console.log('Unknown action in content script:', request.action);
-            }
-            return true;
-        });
     }
 
     // Safe wrapper to send messages to background/service worker
