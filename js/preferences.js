@@ -156,31 +156,8 @@ class GlobalPreferencesManager {
         root.style.setProperty('font-family', this.preferences.fontFamily);
         body.style.fontFamily = this.preferences.fontFamily;
 
-        // Also apply to all elements for consistency
-        const style = document.createElement('style');
-        style.id = 'global-text-formatting';
-        style.textContent = `
-            * {
-                font-family: ${this.preferences.fontFamily} !important;
-                line-height: ${this.preferences.lineHeight} !important;
-                font-size: ${this.preferences.fontSize}px !important;
-            }
-            body, html {
-                font-size: ${this.preferences.fontSize}px !important;
-                line-height: ${this.preferences.lineHeight} !important;
-            }
-        `;
-
-        // Remove old style if exists
-        const oldStyle = document.getElementById('global-text-formatting');
-        if (oldStyle) {
-            oldStyle.remove();
-        }
-
-        // Only add style if not already present and we're on a regular page (not settings)
-        if (!window.location.pathname.includes('settings.html') && document.head) {
-            document.head.appendChild(style);
-        }
+        // Note: Removed global wildcard style that was forcing font-size on ALL elements
+        // This allows CSS defaults and other scripts to manage font sizing properly
     }
 
     /**

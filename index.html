@@ -2,6 +2,22 @@
 <html>
 <head>
     <title>Login/SignUp - Accessibility Translator</title>
+    <!-- Font Awesome Official CDN - Most Reliable -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2qmM9c73Iw2O5/RDth6bIA+S5DXtmNtzDWIwNqKkt1E2FjBg5IN2fZgEi2riYsp2x81cA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Fallback: jsDelivr -->
+    <script>
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          if (!document.querySelector('[data-fontawesome-loaded]')) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdn.jsdelivr.net/npm/font-awesome@5.15.4/css/all.min.css';
+            link.setAttribute('data-fontawesome-loaded', 'true');
+            document.head.appendChild(link);
+          }
+        }, 100);
+      });
+    </script>
     <link rel="stylesheet" href="css/app.css">
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@500&display=swap" rel="stylesheet">
     <!-- Global Preferences Manager - Load early for immediate styling -->

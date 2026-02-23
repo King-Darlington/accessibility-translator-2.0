@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -183,7 +183,7 @@
 
             <h2 class="section">1. Introduction</h2>
             <h3>Background</h3>
-            <p>According to the World Health Organization, approximately 2.2 billion people worldwide have a near or distance vision impairment. Web accessibility remains a significant challenge, with many websites not providing adequate support for assistive technologies or accessibility features. Accessibility Translator 2.0 was conceived to address this gap by providing a comprehensive, user-friendly suite of accessibility tools.</p>
+            <p>According to the World Health Organization, approximately 2.2 billion people worldwide have a near or distance vision impairment. Web accessibility remains a significant challenge, with many websites not providing adequate support for assistive technologies or accessibility features. Accessibility Translator was conceived to address this gap by providing a comprehensive, user-friendly suite of accessibility tools.</p>
             <p>The project draws on current research and industry practices to create a practical deliverable: a combined web application and browser extension that can be adopted by users without specialist training. It emphasizes client-side resilience so critical features continue to work offline or with intermittent connectivity.</p>
 
             <h3>Project Scope</h3>
@@ -195,7 +195,7 @@
             <ol>
                 <li><strong>Functional Excellence:</strong> Implement a reliable suite of accessibility features (TTS, OCR, filters, voice control) that operate across modern browsers.</li>
                 <li><strong>User Experience:</strong> Create an intuitive, keyboard-accessible interface with clear affordances for users of varying abilities.</li>
-                <li><strong>Performance:</strong> Ensure client-side features remain responsive (filter application ≤ 500ms; TTS startup ≤ 1s).</li>
+                <li><strong>Performance:</strong> Ensure client-side features remain responsive (filter application â‰¤ 500ms; TTS startup â‰¤ 1s).</li>
                 <li><strong>Accessibility:</strong> Target WCAG 2.1 Level AA compliance for the web UI and extension popups.</li>
                 <li><strong>Maintainability:</strong> Modular codebase with test coverage and clear documentation to allow future enhancements.</li>
             </ol>
@@ -217,7 +217,7 @@
             <h2 class="section">5. Architecture & Design</h2>
             <div class="figure">
                 <img src="images/architecture.png" alt="Architecture Diagram">
-                <div class="figure-caption">Figure 1: System Architecture — Web App, Extension, and Database</div>
+                <div class="figure-caption">Figure 1: System Architecture â€” Web App, Extension, and Database</div>
             </div>
             <h3>Component Responsibilities</h3>
             <p>The extension popup offers quick controls; content scripts apply filters and extract text; the background service worker coordinates sync operations and routes messages; the web server provides persistent storage for preferences and authentication. Each layer is decoupled through message passing and well-defined APIs.</p>
@@ -232,7 +232,7 @@
 
             <div class="figure">
                 <img src="images/class-diagram.png" alt="Class Diagram">
-                <div class="figure-caption">Figure 2: Class Diagram — Component Relationships</div>
+                <div class="figure-caption">Figure 2: Class Diagram â€” Component Relationships</div>
             </div>
 
             <div class="figure">
@@ -259,9 +259,9 @@
                     <tr><th>Test</th><th>Target</th><th>Measured</th><th>Status</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>Filter latency</td><td>≤ 500ms</td><td>~150ms</td><td>Pass</td></tr>
-                    <tr><td>TTS startup</td><td>≤ 1s</td><td>~200ms</td><td>Pass</td></tr>
-                    <tr><td>WCAG accessibility</td><td>≥ 90</td><td>95</td><td>Pass</td></tr>
+                    <tr><td>Filter latency</td><td>â‰¤ 500ms</td><td>~150ms</td><td>Pass</td></tr>
+                    <tr><td>TTS startup</td><td>â‰¤ 1s</td><td>~200ms</td><td>Pass</td></tr>
+                    <tr><td>WCAG accessibility</td><td>â‰¥ 90</td><td>95</td><td>Pass</td></tr>
                 </tbody>
             </table>
 
@@ -275,7 +275,7 @@
             <p>Deployment uses a standard LAMP stack. The extension package is built and archived for Chrome Web Store submission. Maintenance notes cover database migrations, backup strategies, and how to roll back preference schema changes.</p>
 
             <h2 class="section">11. Conclusions & Recommendations</h2>
-            <p>The Accessibility Translator 2.0 project successfully demonstrates a feasible, user-centered approach to web accessibility by combining extension-based controls with server-backed preferences. Recommended next steps include expanding the voice command set, improving model accuracy for OCR, and offering theme presets for specific impairments.</p>
+            <p>The Accessibility Translator project successfully demonstrates a feasible, user-centered approach to web accessibility by combining extension-based controls with server-backed preferences. Recommended next steps include expanding the voice command set, improving model accuracy for OCR, and offering theme presets for specific impairments.</p>
 
             <h2 class="section">12. References</h2>
             <p>References include WCAG 2.1 documentation, WAI resources, TensorFlow.js and Tesseract.js documentation, and academic papers on accessible design and color vision deficiency.</p>
@@ -287,7 +287,7 @@
         </div>
 
         <div class="footer">
-            DARLINGTON HND SOFTWARE ENGINEERING REPORT — Accessibility Translator 2.0 • Last updated December 15, 2025
+            DARLINGTON HND SOFTWARE ENGINEERING REPORT â€” Accessibility Translator â€¢ Last updated December 15, 2025
         </div>
   </div>
 </body>
@@ -302,7 +302,7 @@
         
         <h3>Design Patterns</h3>
         <ul>
-            <li><strong>Singleton Pattern:</strong> SettingsManager, PopupManager — single instances managing state</li>
+            <li><strong>Singleton Pattern:</strong> SettingsManager, PopupManager â€” single instances managing state</li>
             <li><strong>Observer Pattern:</strong> Event listeners for form inputs and TTS controls</li>
             <li><strong>Message-Based Architecture:</strong> Loose coupling via chrome.runtime.sendMessage</li>
             <li><strong>Factory Pattern:</strong> Filter creation via filterFactory(filterType)</li>
@@ -341,7 +341,7 @@
         <h4>Settings Interface</h4>
         <p>Advanced settings management via <code>settings.html</code> and <code>js/settings.js</code>. SettingsManager class handles:</p>
         <ul>
-            <li>Multi-tier storage (IndexedDB → localStorage → server)</li>
+            <li>Multi-tier storage (IndexedDB â†’ localStorage â†’ server)</li>
             <li>Offline support with automatic sync when online</li>
             <li>Settings import/export functionality</li>
             <li>Real-time form validation</li>
@@ -377,7 +377,7 @@
         <p>8 color filters including standard (grayscale, high-contrast, sepia) and color-blind variants (protanopia, deuteranopia, tritanopia). Filters apply instantly and persist across page navigation.</p>
         
         <h3>Voice Commands</h3>
-        <p>30+ offline voice commands with fuzzy matching for typo tolerance. Web Speech API integration with Levenshtein distance-based scoring (≥0.55 confidence threshold). Commands cover TTS control, filter management, navigation, and settings.</p>
+        <p>30+ offline voice commands with fuzzy matching for typo tolerance. Web Speech API integration with Levenshtein distance-based scoring (â‰¥0.55 confidence threshold). Commands cover TTS control, filter management, navigation, and settings.</p>
         
         <h3>Object Detection & OCR</h3>
         <p>COCO-SSD model (TensorFlow.js) for real-time object detection. Tesseract.js for client-side OCR supporting multiple languages. Supports camera input and file upload with drag-and-drop.</p>
@@ -399,27 +399,27 @@
                 <tr>
                     <td>Authentication</td>
                     <td>Login, registration, session validation</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
                 <tr>
                     <td>Filters</td>
                     <td>Apply, switch, reset, persistence</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
                 <tr>
                     <td>Text-to-Speech</td>
                     <td>Read page, adjust voice/rate/pitch</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
                 <tr>
                     <td>Voice Commands</td>
                     <td>30+ commands, fuzzy matching</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
                 <tr>
                     <td>Preferences</td>
                     <td>Save, load, sync, import/export</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
             </tbody>
         </table>
@@ -437,33 +437,33 @@
             <tbody>
                 <tr>
                     <td>Filter Latency</td>
-                    <td>≤ 500ms</td>
+                    <td>â‰¤ 500ms</td>
                     <td>~150ms</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
                 <tr>
                     <td>TTS Startup</td>
-                    <td>≤ 1s</td>
+                    <td>â‰¤ 1s</td>
                     <td>~200ms</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
                 <tr>
                     <td>Page Load (with extension)</td>
-                    <td>≤ 3s</td>
+                    <td>â‰¤ 3s</td>
                     <td>~2.5s</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
                 <tr>
                     <td>Lighthouse Performance</td>
-                    <td>≥ 80</td>
+                    <td>â‰¥ 80</td>
                     <td>92</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
                 <tr>
                     <td>WCAG Accessibility</td>
-                    <td>≥ 90</td>
+                    <td>â‰¥ 90</td>
                     <td>95</td>
-                    <td>✅ Pass</td>
+                    <td>âœ… Pass</td>
                 </tr>
             </tbody>
         </table>
@@ -483,35 +483,35 @@
             <tbody>
                 <tr>
                     <td>Functional TTS on all pages</td>
-                    <td>✅ Complete</td>
+                    <td>âœ… Complete</td>
                 </tr>
                 <tr>
                     <td>Color filters with accessibility variants</td>
-                    <td>✅ Complete</td>
+                    <td>âœ… Complete</td>
                 </tr>
                 <tr>
                     <td>Voice control (30+ commands)</td>
-                    <td>✅ Complete</td>
+                    <td>âœ… Complete</td>
                 </tr>
                 <tr>
                     <td>Offline voice operation</td>
-                    <td>✅ Complete</td>
+                    <td>âœ… Complete</td>
                 </tr>
                 <tr>
                     <td>Settings persistence & sync</td>
-                    <td>✅ Complete</td>
+                    <td>âœ… Complete</td>
                 </tr>
                 <tr>
                     <td>Extension integration (Manifest V3)</td>
-                    <td>✅ Complete</td>
+                    <td>âœ… Complete</td>
                 </tr>
                 <tr>
                     <td>WCAG 2.1 Level AA compliance</td>
-                    <td>✅ Complete</td>
+                    <td>âœ… Complete</td>
                 </tr>
                 <tr>
                     <td>Cross-browser support</td>
-                    <td>✅ Complete</td>
+                    <td>âœ… Complete</td>
                 </tr>
             </tbody>
         </table>
@@ -529,22 +529,22 @@
                 <tr>
                     <td>Chrome</td>
                     <td>90+</td>
-                    <td>✅ Full Support</td>
+                    <td>âœ… Full Support</td>
                 </tr>
                 <tr>
                     <td>Firefox</td>
                     <td>88+</td>
-                    <td>✅ Full Support</td>
+                    <td>âœ… Full Support</td>
                 </tr>
                 <tr>
                     <td>Safari</td>
                     <td>14+</td>
-                    <td>⚠️ Limited</td>
+                    <td>âš ï¸ Limited</td>
                 </tr>
                 <tr>
                     <td>Edge</td>
                     <td>90+</td>
-                    <td>✅ Full Support</td>
+                    <td>âœ… Full Support</td>
                 </tr>
             </tbody>
         </table>
@@ -565,7 +565,7 @@
             <li>Create database tables (see Appendix A)</li>
             <li>Configure <code>config/database.php</code> with credentials</li>
             <li>Enable HTTPS and set secure cookies</li>
-            <li>Load extension in Chrome: <code>chrome://extensions/</code> → Load unpacked</li>
+            <li>Load extension in Chrome: <code>chrome://extensions/</code> â†’ Load unpacked</li>
             <li>Test all features and verify settings sync</li>
         </ol>
         
@@ -574,7 +574,7 @@
         <h2>9. Conclusions & Recommendations</h2>
         
         <h3>Summary</h3>
-        <p>Accessibility Translator 2.0 successfully delivers a comprehensive accessibility suite combining robust authentication, browser-integrated features (TTS, filters, voice, OCR), offline capability, and WCAG compliance. The system is production-ready and serves as a solid foundation for future accessibility innovations.</p>
+        <p>Accessibility Translator successfully delivers a comprehensive accessibility suite combining robust authentication, browser-integrated features (TTS, filters, voice, OCR), offline capability, and WCAG compliance. The system is production-ready and serves as a solid foundation for future accessibility innovations.</p>
         
         <h3>Lessons Learned</h3>
         <ul>
@@ -616,3 +616,4 @@
     </div>
 </body>
 </html>
+

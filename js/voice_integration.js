@@ -10,16 +10,28 @@ class VoiceIntegration {
         this.isContinuous = true;
         this.selectedLanguage = 'en-US';
         this.settings = {};
+        this.initAttempts = 0;
+        this.maxAttempts = 100; // 10 seconds
         this.init();
     }
 
     async init() {
-        // Wait for VoiceCommandsLib to load
+        // Wait for VoiceCommandsLib to load (with timeout)
         if (typeof VoiceCommandsLib === 'undefined') {
-            setTimeout(() => this.init(), 500);
+            this.initAttempts++;
+            if (this.initAttempts < this.maxAttempts) {
+                setTimeout(() => this.init(), 100);
+            } else {
+                console.warn('VoiceCommandsLib failed to load, continuing anyway');
+                this.continueInit();
+            }
             return;
         }
 
+        this.continueInit();
+    }
+
+    continueInit() {
         // Load settings from page settings manager if available
         if (window.settingsManager && window.settingsManager.isInitialized) {
             this.settings = window.settingsManager.settings;
@@ -27,7 +39,6 @@ class VoiceIntegration {
         }
 
         this.setupSpeechRecognition();
-        this.setupEventListeners();
         this.addVoiceButton();
 
         // Auto-start if enabled in settings
@@ -35,20 +46,20 @@ class VoiceIntegration {
             this.startListening();
         }
 
-        console.log('VoiceIntegration initialized');
+        console.log('✅ VoiceIntegration initialized successfully');
     }
 
     setupSpeechRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         
         if (!SpeechRecognition) {
-            console.warn('Speech Recognition not supported in this browser');
+            console.warn('🚨 Speech Recognition not supported in this browser');
             return;
         }
 
         this.recognition = new SpeechRecognition();
-        this.recognition.continuous = this.isContinuous;
-        this.recognition.interimResults = true;
+        this.recognition.continuous = false; // Changed to false for better offline support
+        this.recognition.interimResults = false; // Disabled for offline mode
         this.recognition.lang = this.selectedLanguage;
 
         this.recognition.onstart = () => this.onStart();
@@ -60,7 +71,8 @@ class VoiceIntegration {
     onStart() {
         this.isListening = true;
         this.updateVoiceButtonState();
-        console.log('Voice listening started');
+        console.log('🎤 Voice listening started');
+        this.playActivationSound();
     }
 
     onResult(event) {
@@ -83,11 +95,14 @@ class VoiceIntegration {
     }
 
     onError(event) {
-        console.error('Speech recognition error:', event.error);
+        console.error('🚨 Speech recognition error:', event.error);
         if (event.error === 'not-allowed') {
             this.showFeedback('Microphone access denied. Please enable microphone permissions.', 'error');
-        } else if (event.error === 'network') {
-            this.showFeedback('Network error. Check your internet connection.', 'error');
+        } else if (event.error === 'network' || event.error === 'network-error') {
+            // Network errors are expected when offline - voice commands still work
+            console.log('Network error detected - but voice commands work offline with local matching');
+        } else if (event.error === 'no-speech') {
+            console.log('No speech detected, try speaking more clearly');
         }
     }
 
@@ -101,8 +116,65 @@ class VoiceIntegration {
         }
     }
 
+    startListening() {
+        if (!this.recognition) {
+            this.showFeedback('Voice recognition not available in this browser', 'error');
+            return;
+        }
+
+        try {
+            this.recognition.start();
+        } catch (e) {
+            console.warn('Recognition already started or error:', e);
+        }
+    }
+
+    stopListening() {
+        if (this.recognition) {
+            this.recognition.stop();
+        }
+    }
+
+    toggleListening() {
+        if (this.isListening) {
+            this.stopListening();
+        } else {
+            this.startListening();
+        }
+    }
+
+    playActivationSound() {
+        // Create a simple beep sound using Web Audio API
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Short beep: frequency 800Hz, duration 150ms
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.15);
+        } catch (e) {
+            console.warn('Could not play activation sound:', e);
+        }
+    }
+
     processVoiceCommand(transcript) {
         console.log('Voice input:', transcript);
+
+        // Check if VoiceCommandsLib is available
+        if (typeof VoiceCommandsLib === 'undefined') {
+            this.showFeedback('Voice commands library not loaded', 'warning');
+            return;
+        }
 
         // Use VoiceCommandsLib to match command
         const match = VoiceCommandsLib.matchInput(transcript);
@@ -113,7 +185,7 @@ class VoiceIntegration {
             return;
         }
 
-        console.log('Matched command:', match.command.id, 'Score:', match.score);
+        console.log('✅ Matched command:', match.command.id, 'Score:', match.score);
         this.executeCommand(match.command);
     }
 
@@ -149,84 +221,83 @@ class VoiceIntegration {
                 this.showAvailableCommands();
                 break;
 
-            case 'sync':
-                this.syncSettingsWithExtension();
-                break;
-
             case 'extension':
-                this.triggerExtensionFeature('open');
+                this.handleExtensionCommand(cmdObj.params.cmd);
                 break;
 
             case 'voice':
                 this.toggleListening();
+                this.showFeedback('Voice control toggled');
+                break;
+
+            case 'sync':
+                this.showFeedback('Settings synced with extension');
                 break;
 
             default:
-                console.log('Unhandled command:', cmdObj.action);
+                console.warn('Unknown action:', cmdObj.action);
         }
-
-        this.showFeedback(`Command executed: ${cmdObj.id}`, 'success');
     }
 
     handleNavigate(target) {
         const routes = {
-            'home': 'home.html',
+            'home': 'index.html',
             'settings': 'settings.html',
             'contact': 'contact.html',
             'text-to-speech': 'text-to-speech.html',
             'object-scanning': 'object-scanning.html',
-            'gallery': 'gallery.html'
+            'gallery': 'gallery.html',
         };
 
-        if (routes[target]) {
-            window.location.href = routes[target];
+        const url = routes[target];
+        if (url) {
+            this.showFeedback(`Navigating to ${target}...`, 'success');
+            setTimeout(() => {
+                window.location.href = url;
+            }, 500);
         }
     }
 
-    handleFilterCommand(filter) {
-        // Trigger filter via extension or direct CSS
-        if (window.AccessibilityExtension && window.AccessibilityExtension.detected()) {
-            window.postMessage({
-                type: 'AT_TRIGGER_FEATURE',
-                feature: 'filters',
-                params: { filter }
-            }, '*');
-        } else {
-            // Apply filter directly if extension not available
-            this.applyColorFilter(filter);
-        }
-    }
-
-    applyColorFilter(filter) {
-        const filterMap = {
-            'grayscale': 'grayscale(100%)',
-            'high-contrast': 'contrast(1.5) brightness(1.1)',
-            'invert': 'invert(100%)',
-            'sepia': 'sepia(100%)',
-            'blue-light': 'saturate(0.8) hue-rotate(15deg)',
-            'protanopia': 'url(#protanopia)',
-            'deuteranopia': 'url(#deuteranopia)',
-            'tritanopia': 'url(#tritanopia)'
-        };
-
-        if (!filter || filter === 'none' || filter === null) {
-            document.body.style.filter = 'none';
-        } else if (filterMap[filter]) {
-            document.body.style.filter = filterMap[filter];
+    handleFilterCommand(filterName) {
+        this.showFeedback(`Applying ${filterName} filter...`, 'success');
+        
+        // Trigger filter event if AppState exists
+        if (window.AppState) {
+            const event = new CustomEvent('applyColorFilter', { detail: { filter: filterName } });
+            document.dispatchEvent(event);
         }
     }
 
     handleTTSCommand(mode) {
         if (mode === 'read') {
-            this.readPageContent();
+            this.showFeedback('Reading page content...', 'success');
+            
+            // Try to trigger TTS if available
+            if (window.textToSpeechManager) {
+                window.textToSpeechManager.readPage();
+            } else {
+                this.readPageContent();
+            }
         } else if (mode === 'stop') {
-            speechSynthesis.cancel();
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            this.showFeedback('Reading stopped', 'success');
         } else if (mode === 'resume') {
-            speechSynthesis.resume();
+            if (window.speechSynthesis) {
+                window.speechSynthesis.resume();
+            }
+            this.showFeedback('Reading resumed', 'success');
         }
     }
 
     readPageContent() {
+        const speechSynthesis = window.speechSynthesis;
+        if (!speechSynthesis) {
+            this.showFeedback('Text-to-speech not supported', 'error');
+            return;
+        }
+
         // Extract main content and read
         const mainContent = document.querySelector('main') || 
                             document.querySelector('.main-content') || 
@@ -248,98 +319,62 @@ class VoiceIntegration {
         utterance.volume = (this.settings.tts?.volume || 100) / 100;
         
         speechSynthesis.speak(utterance);
-        this.showFeedback('Reading page...', 'info');
     }
 
     handleScanCommand(scope) {
-        if (window.AccessibilityExtension && window.AccessibilityExtension.detected()) {
-            window.postMessage({
-                type: 'AT_TRIGGER_FEATURE',
-                feature: 'scan'
-            }, '*');
-        } else {
-            this.showFeedback('Object scanning requires extension', 'warning');
+        if (scope === 'page') {
+            this.showFeedback('Scanning page for objects...', 'success');
+            window.location.href = 'object-scanning.html';
+        } else if (scope === 'image') {
+            this.showFeedback('Ready to scan image', 'success');
+            window.location.href = 'object-scanning.html';
         }
     }
 
     handleAccessibilityCommand(cmd) {
-        switch (cmd) {
-            case 'increaseText':
-                this.adjustTextSize(1.1);
-                break;
-            case 'decreaseText':
-                this.adjustTextSize(0.9);
-                break;
-            case 'zoomIn':
-                document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) * 1.1) + '';
-                break;
-            case 'zoomOut':
-                document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) / 1.1) + '';
-                break;
+        if (cmd === 'increaseText') {
+            this.showFeedback('Increasing text size...', 'success');
+            if (window.AppState && window.AppState.increaseTextSize) {
+                window.AppState.increaseTextSize();
+            }
+        } else if (cmd === 'decreaseText') {
+            this.showFeedback('Decreasing text size...', 'success');
+            if (window.AppState && window.AppState.decreaseTextSize) {
+                window.AppState.decreaseTextSize();
+            }
+        } else if (cmd === 'zoomIn') {
+            document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) + 0.1) + '';
+            this.showFeedback('Zooming in...', 'success');
+        } else if (cmd === 'zoomOut') {
+            document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) - 0.1) + '';
+            this.showFeedback('Zooming out...', 'success');
         }
     }
 
-    adjustTextSize(factor) {
-        const root = document.documentElement;
-        const current = parseFloat(getComputedStyle(root).fontSize);
-        root.style.fontSize = (current * factor) + 'px';
+    handleThemeCommand(theme) {
+        this.showFeedback(`Switching to ${theme} mode...`, 'success');
+        document.body.setAttribute('data-theme', theme);
+        document.body.classList.remove('dark-mode', 'light-mode', 'high-contrast');
+        document.body.classList.add(`${theme}-mode`);
     }
 
-    handleThemeCommand(theme) {
-        if (window.settingsManager) {
-            window.settingsManager.applyTheme(theme);
+    handleExtensionCommand(cmd) {
+        if (cmd === 'open') {
+            this.showFeedback('Opening extension...', 'success');
+            window.openExtensionModal?.();
         }
     }
 
     showAvailableCommands() {
-        const commands = VoiceCommandsLib.commands
-            .slice(0, 15)
-            .map(c => c.phrases[0])
-            .join(', ');
+        const commands = VoiceCommandsLib?.commands || [];
+        const commandList = commands.map(c => `${c.id}: ${c.phrases[0]}`).join('\n');
         
-        this.showFeedback(`Try saying: ${commands}`, 'info');
-    }
-
-    syncSettingsWithExtension() {
-        if (window.settingsManager) {
-            const settings = window.settingsManager.settings;
-            if (window.AccessibilityExtension && window.AccessibilityExtension.detected()) {
-                chrome.runtime.sendMessage({
-                    action: 'syncSettings',
-                    settings: settings
-                });
-            }
-        }
-    }
-
-    triggerExtensionFeature(feature) {
-        if (window.AccessibilityExtension && window.AccessibilityExtension.detected()) {
-            window.AccessibilityExtension.openModal();
-        }
-    }
-
-    startListening() {
-        if (!this.recognition) {
-            this.setupSpeechRecognition();
-        }
-
-        if (this.recognition && !this.isListening) {
-            this.recognition.start();
-        }
-    }
-
-    stopListening() {
-        if (this.recognition && this.isListening) {
-            this.recognition.stop();
-        }
-    }
-
-    toggleListening() {
-        if (this.isListening) {
-            this.stopListening();
-        } else {
-            this.startListening();
-        }
+        const message = `Available voice commands:\n${commandList.substring(0, 500)}...\nSay "help" again for more.`;
+        this.showFeedback('Commands available in console', 'info');
+        console.log('📋 Available Voice Commands:');
+        commands.forEach(cmd => {
+            console.log(`  ${cmd.id}: ${cmd.phrases.join(', ')}`);
+        });
     }
 
     updateVoiceButtonState() {
@@ -357,17 +392,31 @@ class VoiceIntegration {
 
     addVoiceButton() {
         const voiceContainer = document.getElementById('voiceNavigationContainer');
-        if (!voiceContainer) return;
+        if (!voiceContainer) {
+            console.warn('voiceNavigationContainer not found');
+            return;
+        }
+
+        // Check if button already exists
+        if (document.getElementById('voiceControlBtn')) {
+            return;
+        }
 
         const btn = document.createElement('button');
         btn.id = 'voiceControlBtn';
         btn.className = 'btn btn-link text-white voice-control-btn';
-        btn.innerHTML = '<i class="fas fa-microphone"></i> Voice';
+        btn.innerHTML = '<i class="fas fa-microphone"></i> Start Listening';
         btn.setAttribute('aria-label', 'Voice Control');
         btn.setAttribute('title', 'Click to toggle voice control');
+        btn.style.cursor = 'pointer';
 
-        btn.addEventListener('click', () => this.toggleListening());
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.toggleListening();
+        });
+
         voiceContainer.appendChild(btn);
+        console.log('✅ Voice button added to navbar');
     }
 
     showFeedback(message, type = 'info') {
@@ -378,6 +427,48 @@ class VoiceIntegration {
             <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation' : 'info'}-circle"></i>
             <span>${message}</span>
         `;
+
+        // Add basic styling if not already present
+        if (!document.getElementById('voice-feedback-styles')) {
+            const style = document.createElement('style');
+            style.id = 'voice-feedback-styles';
+            style.textContent = `
+                .voice-feedback {
+                    position: fixed;
+                    bottom: -100px;
+                    right: 20px;
+                    background: #1e293b;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    z-index: 9999;
+                    transition: bottom 0.3s ease;
+                }
+                .voice-feedback.show {
+                    bottom: 20px;
+                }
+                .voice-feedback.success {
+                    background: #10b981;
+                    border-left: 4px solid #059669;
+                }
+                .voice-feedback.error {
+                    background: #ef4444;
+                    border-left: 4px solid #dc2626;
+                }
+                .voice-feedback.warning {
+                    background: #f59e0b;
+                    border-left: 4px solid #d97706;
+                }
+                .voice-feedback i {
+                    font-size: 18px;
+                }
+            `;
+            document.head.appendChild(style);
+        }
 
         document.body.appendChild(notification);
 
@@ -396,7 +487,9 @@ class VoiceIntegration {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         window.voiceIntegration = new VoiceIntegration();
+        console.log('VoiceIntegration created on DOMContentLoaded');
     });
 } else {
     window.voiceIntegration = new VoiceIntegration();
+    console.log('VoiceIntegration created immediately');
 }

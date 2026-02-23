@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Convert DARLINGTON_HND_SWE_REPORT.md to DOCX format using python-docx
 """
@@ -15,7 +15,7 @@ try:
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.enum.style import WD_STYLE_TYPE
 except ImportError:
-    print("❌ python-docx not installed.")
+    print("âŒ python-docx not installed.")
     print("Install with: pip install python-docx")
     sys.exit(1)
 
@@ -50,7 +50,7 @@ def create_docx(markdown_content, output_path):
     metadata.add_run('Course: ').bold = True
     metadata.add_run('HND Software Engineering\n')
     metadata.add_run('Project: ').bold = True
-    metadata.add_run('Accessibility Translator 2.0\n')
+    metadata.add_run('Accessibility Translator\n')
     metadata.add_run('Assessment Type: ').bold = True
     metadata.add_run('Major Project Report')
     metadata.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -173,7 +173,7 @@ def create_docx(markdown_content, output_path):
     
     # Save document
     doc.save(output_path)
-    print(f"✅ Document saved: {output_path}")
+    print(f"âœ… Document saved: {output_path}")
 
 def main():
     """Main entry point"""
@@ -181,23 +181,24 @@ def main():
     output_file = 'DARLINGTON_HND_SWE_REPORT.docx'
     
     if not os.path.exists(markdown_file):
-        print(f"❌ File not found: {markdown_file}")
+        print(f"âŒ File not found: {markdown_file}")
         sys.exit(1)
     
-    print(f"📄 Reading: {markdown_file}")
+    print(f"ðŸ“„ Reading: {markdown_file}")
     content = parse_markdown_file(markdown_file)
     
-    print(f"🔄 Converting to DOCX...")
+    print(f"ðŸ”„ Converting to DOCX...")
     create_docx(content, output_file)
     
     if os.path.exists(output_file):
         size_kb = os.path.getsize(output_file) / 1024
-        print(f"✅ Conversion complete!")
+        print(f"âœ… Conversion complete!")
         print(f"   File: {output_file}")
         print(f"   Size: {size_kb:.1f} KB")
     else:
-        print(f"❌ Conversion failed")
+        print(f"âŒ Conversion failed")
         sys.exit(1)
 
 if __name__ == '__main__':
     main()
+

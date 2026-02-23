@@ -59,9 +59,12 @@ function initializeNavigation() {
                 navItems.forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
 
-                const link = item.querySelector('a').getAttribute('href');
-                if (link && link !== '#') {
-                    window.location.href = link;
+                const link = item.querySelector('a');
+                if (link && link.getAttribute('href')) {
+                    const href = link.getAttribute('href');
+                    if (href && href !== '#') {
+                        window.location.href = href;
+                    }
                 }
 
                 if (navbarCollapse && navbarCollapse.classList.contains('show')) {
@@ -147,17 +150,6 @@ function initializeVoiceNavigation() {
     let recognition = null;
     let isListening = false;
 
-    function speakMessage(message) {
-        if (AppState.speechSynthesis) {
-            AppState.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(message);
-            utterance.rate = 0.9;
-            utterance.pitch = 1;
-            utterance.volume = 0.8;
-            AppState.speechSynthesis.speak(utterance);
-        }
-    }
-
     function executeVoiceCommand(cmdObj) {
         if (!cmdObj || !cmdObj.action) return;
 
@@ -189,7 +181,6 @@ function initializeVoiceNavigation() {
                 if (cmdObj.params.mode === 'read') {
                     // Trigger TTS reading
                     window.postMessage({ type: 'AT_TRIGGER_FEATURE', feature: 'tts' }, '*');
-                    speakMessage('Starting text to speech');
                 } else if (cmdObj.params.mode === 'stop') {
                     window.postMessage({ type: 'AT_TRIGGER_FEATURE', feature: 'stop-tts' }, '*');
                     AppState.speechSynthesis?.cancel();
@@ -218,7 +209,7 @@ function initializeVoiceNavigation() {
                 break;
 
             case 'help':
-                speakMessage('Available commands: go home, text to speech, object scanning, gallery, contact, high contrast, grayscale, invert colors, dark mode, increase text, decrease text');
+                console.log('Help command - use voice_integration.js for command listing');
                 break;
         }
     }
@@ -229,7 +220,6 @@ function initializeVoiceNavigation() {
             if (window.VoiceCommandsLib && typeof window.VoiceCommandsLib.matchInput === 'function') {
                 const match = window.VoiceCommandsLib.matchInput(transcript);
                 if (match && match.score >= 0.55) {
-                    speakMessage('Command executed');
                     executeVoiceCommand(match.command);
                     return;
                 }
@@ -238,15 +228,15 @@ function initializeVoiceNavigation() {
             console.warn('VoiceCommandsLib error:', err);
         }
 
-        // Fallback to simple matching
-        speakMessage('Command not recognized. Say help for available commands.');
+        // Command not recognized - let voice_integration.js handle feedback
+        console.log('Command not recognized:', transcript);
     }
 
     function startListening() {
         if (!recognition) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                speakMessage('Speech recognition not supported in your browser');
+                console.warn('Speech recognition not supported in your browser');
                 return;
             }
             
@@ -259,7 +249,6 @@ function initializeVoiceNavigation() {
                 isListening = true;
                 voiceNavBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
                 voiceNavStatus.textContent = 'Listening...';
-                speakMessage('Voice navigation active. Say a command.');
             };
 
             recognition.onresult = (event) => {
@@ -276,7 +265,6 @@ function initializeVoiceNavigation() {
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 voiceNavStatus.textContent = 'Error: ' + event.error;
-                speakMessage('Sorry, there was an error with voice recognition');
             };
 
             recognition.onend = () => {

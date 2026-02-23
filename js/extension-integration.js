@@ -236,6 +236,28 @@
     // Show modal using Bootstrap
     const bsModal = new bootstrap.Modal(modal);
     bsModal.show();
+    
+    // Add feature item click handlers
+    modal.querySelectorAll('.feature-item').forEach(item => {
+      item.addEventListener('click', function() {
+        const feature = this.getAttribute('data-feature');
+        if (feature) {
+          // Close the modal
+          bsModal.hide();
+          
+          // Send message to extension to open with this feature
+          window.postMessage({
+            type: 'AT_OPEN_EXTENSION_FEATURE',
+            feature: feature
+          }, '*');
+          
+          // Fallback: trigger feature on current page
+          window.triggerExtensionFeature(feature);
+          
+          console.log('Feature clicked:', feature);
+        }
+      });
+    });
   }
   
   function createExtensionModal() {
@@ -265,42 +287,42 @@
             <div class="extension-features">
               <h4>What You Get:</h4>
               <div class="feature-list">
-                <div class="feature-item">
+                <div class="feature-item" data-feature="tts">
                   <i class="fas fa-volume-up"></i>
                   <div>
                     <strong>Text-to-Speech</strong>
                     <span>Read any webpage aloud with natural voices</span>
                   </div>
                 </div>
-                <div class="feature-item">
+                <div class="feature-item" data-feature="color-filters">
                   <i class="fas fa-palette"></i>
                   <div>
                     <strong>Color Filters</strong>
                     <span>Apply visual filters for better readability</span>
                   </div>
                 </div>
-                <div class="feature-item">
+                <div class="feature-item" data-feature="magnifier">
                   <i class="fas fa-search-plus"></i>
                   <div>
                     <strong>Text Magnification</strong>
                     <span>Increase text size on any page</span>
                   </div>
                 </div>
-                <div class="feature-item">
+                <div class="feature-item" data-feature="image-descriptions">
                   <i class="fas fa-image"></i>
                   <div>
                     <strong>Image Descriptions</strong>
                     <span>Get AI-powered descriptions of images</span>
                   </div>
                 </div>
-                <div class="feature-item">
+                <div class="feature-item" data-feature="link-reader">
                   <i class="fas fa-link"></i>
                   <div>
                     <strong>Link Reader</strong>
                     <span>Hear all links on a page read aloud</span>
                   </div>
                 </div>
-                <div class="feature-item">
+                <div class="feature-item" data-feature="simplify">
                   <i class="fas fa-file-alt"></i>
                   <div>
                     <strong>Page Simplification</strong>
@@ -512,13 +534,12 @@
       }
       
       .extension-status-indicator.active {
-        background: #10b981;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         box-shadow: 0 0 8px #10b981;
-        animation: pulse 2s ease-in-out infinite;
       }
       
       .extension-status-indicator.inactive {
-        background: #6b7280;
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
       }
       
       /* Extension Modal */
@@ -606,6 +627,7 @@
         border-radius: 12px;
         border: 1px solid rgba(99, 102, 241, 0.2);
         transition: all 0.3s ease;
+        cursor: pointer;
       }
       
       .feature-item:hover {

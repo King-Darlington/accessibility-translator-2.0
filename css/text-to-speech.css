@@ -4,6 +4,7 @@
   min-height: 100vh;
   padding: 120px 0 80px;
   position: relative;
+  background: linear-gradient(135deg, rgba(3, 7, 18, 0.95) 0%, rgba(17, 24, 39, 0.95) 50%, rgba(3, 7, 18, 0.95) 100%);
 }
 
 .page-header {

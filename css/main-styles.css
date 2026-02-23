@@ -24,6 +24,59 @@
   --base-line-height: 1.6;
 }
 
+/* FONT AWESOME FIX - Ensure icons display properly */
+@font-face {
+  font-family: 'Font Awesome 5 Free';
+  font-style: normal;
+  font-weight: 400;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.woff2') format('woff2'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.woff') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Font Awesome 5 Free';
+  font-style: normal;
+  font-weight: 900;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.woff2') format('woff2'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.woff') format('woff');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Font Awesome 5 Brands';
+  font-style: normal;
+  font-weight: 400;
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.woff2') format('woff2'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.woff') format('woff');
+  font-display: swap;
+}
+
+/* Ensure icons don't turn into boxes and display correctly */
+.fa, [class^="fa-"], [class*=" fa-"] {
+  font-family: 'Font Awesome 5 Free' !important;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.fas, .fa-solid {
+  font-weight: 900 !important;
+  font-family: 'Font Awesome 5 Free' !important;
+}
+
+.far, .fa-regular {
+  font-weight: 400 !important;
+  font-family: 'Font Awesome 5 Free' !important;
+}
+
+.fab, .fa-brands {
+  font-family: 'Font Awesome 5 Brands' !important;
+  font-weight: 400 !important;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -220,6 +273,19 @@ body {
 #navbarSupportedContent ul li a i {
   margin-right: 10px;
   transition: all 0.3s ease;
+}
+
+/* Ensure Font Awesome icons are visible and inherit link color */
+.navbar-mainbg .nav-link i,
+.navbar-mainbg .navbar-toggler i {
+  color: rgba(255,255,255,0.95) !important;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Fallback: ensure .fa/.fas have expected font-weight so icons render when font available */
+.fa, .fas, .far, .fab {
+  font-weight: 900;
 }
 
 #navbarSupportedContent ul li a:hover i {

@@ -244,8 +244,9 @@ class PopupManager {
 
     async getVoices() {
         try {
-            if (!chrome.tts || typeof chrome.tts.getVoices !== 'function') {
-                console.warn('chrome.tts not available');
+            // Use Web Speech API instead of non-existent chrome.tts API
+            if (!window.speechSynthesis) {
+                console.warn('Web Speech API not available');
                 return [];
             }
             
@@ -255,10 +256,19 @@ class PopupManager {
                     resolve([]);
                 }, this.messageTimeout);
                 
-                chrome.tts.getVoices((voices) => {
+                // Get available voices from speechSynthesis
+                const getAvailableVoices = () => {
+                    const voices = window.speechSynthesis.getVoices();
                     clearTimeout(timeout);
                     resolve(voices || []);
-                });
+                };
+                
+                // Voices may not be loaded immediately
+                if (window.speechSynthesis.getVoices().length > 0) {
+                    getAvailableVoices();
+                } else {
+                    window.speechSynthesis.onvoiceschanged = getAvailableVoices;
+                }
             });
         } catch (err) {
             console.warn('Error getting voices:', err);
@@ -275,8 +285,8 @@ class PopupManager {
         if (voices && voices.length > 0) {
             voices.forEach(voice => {
                 const option = document.createElement('option');
-                option.value = voice.voiceName || voice.lang;
-                option.textContent = `${voice.voiceName || voice.lang} (${voice.lang || 'unknown'})`;
+                option.value = voice.name || voice.voiceName || voice.lang;
+                option.textContent = `${voice.name || voice.voiceName || 'Default'} (${voice.lang || 'unknown'})`;
                 select.appendChild(option);
             });
         } else {
@@ -375,12 +385,7 @@ class PopupManager {
             });
 
             if (response && response.text) {
-                const settings = await this.getTTSSettings();
-                await chrome.runtime.sendMessage({
-                    action: 'speakText',
-                    text: response.text,
-                    options: settings
-                });
+                await this.speakText(response.text);
                 this.showNotification('Reading page...', 'success');
             } else {
                 throw new Error('No text extracted from page');
@@ -434,8 +439,8 @@ class PopupManager {
 
     stopSpeech() {
         try {
-            if (chrome.tts && chrome.tts.stop) {
-                chrome.tts.stop();
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
                 this.showNotification('Speech stopped', 'info');
             }
         } catch (error) {
@@ -554,12 +559,32 @@ class PopupManager {
                 throw new Error('Invalid text provided');
             }
 
+            if (!window.speechSynthesis) {
+                throw new Error('Text-to-speech not available');
+            }
+
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
             const settings = await this.getTTSSettings();
-            await chrome.runtime.sendMessage({
-                action: 'speakText',
-                text: text.trim(),
-                options: settings
-            });
+            const utterance = new SpeechSynthesisUtterance(text.trim());
+            
+            // Apply TTS settings
+            utterance.rate = settings.rate || 1;
+            utterance.pitch = settings.pitch || 1;
+            utterance.volume = settings.volume || 1;
+            
+            // Apply voice if available
+            if (settings.voice) {
+                const voices = window.speechSynthesis.getVoices();
+                const selectedVoice = voices.find(v => v.name === settings.voice || v.voiceName === settings.voice);
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+            }
+
+            // Speak the text
+            window.speechSynthesis.speak(utterance);
         } catch (error) {
             console.error('Error speaking text:', error);
             throw error;
