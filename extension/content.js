@@ -297,6 +297,11 @@ class AccessibilityBubble {
                     sendResponse({ success: true });
                     break;
 
+                case 'removeFilter':
+                    this.removeFilter();
+                    sendResponse({ success: true });
+                    break;
+
                 default:
                     sendResponse({ success: false, error: `Unknown action: ${action}` });
             }
@@ -541,6 +546,19 @@ class AccessibilityBubble {
             this.currentFilter = filter;
             this.updateActiveFilterIndicator(filter);
         });
+    }
+
+    async removeFilter() {
+        // Remove all filter CSS from the page
+        document.documentElement.style.filter = '';
+        document.documentElement.style.webkitFilter = '';
+        // Remove from all children
+        document.querySelectorAll('*').forEach(el => {
+            el.style.filter = '';
+            el.style.webkitFilter = '';
+        });
+        // Optionally, remove SVG filters if used
+        // ...existing code...
     }
 
     updateActiveFilterIndicator(filter) {

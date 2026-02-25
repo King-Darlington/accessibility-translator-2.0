@@ -301,7 +301,7 @@
 .about-slide p {
   font-size: 1.1rem;
   line-height: 1.8;
-  color: rgb(2, 13, 29);
+  color: rgb(180, 197, 223);
   position: relative;
   z-index: 1;
   animation: fadeIn 1s ease 0.3s both;
@@ -711,6 +711,7 @@
   
   .about-slide p {
     font-size: 1rem;
+    color: rgb(180, 197, 223);
   }
   
   .features-grid {

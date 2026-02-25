@@ -155,6 +155,15 @@ class PopupManager {
             });
         });
 
+        // Reset filters button
+        const resetBtn = document.getElementById('resetFilters');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.resetColorFilters();
+            });
+        }
+
         // Voice control
         const voiceToggle = document.getElementById('voiceToggle');
         if (voiceToggle) {
@@ -438,13 +447,10 @@ class PopupManager {
     }
 
     stopSpeech() {
-        try {
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-                this.showNotification('Speech stopped', 'info');
-            }
-        } catch (error) {
-            console.error('Error stopping speech:', error);
+        if (chrome.tts && typeof chrome.tts.stop === 'function') {
+            chrome.tts.stop();
+        } else {
+            console.warn('chrome.tts.stop is not available in this context');
         }
     }
 
@@ -866,7 +872,47 @@ class PopupManager {
             console.error('Error loading settings:', error);
         }
     }
+
+    async resetColorFilters() {
+        try {
+            if (!this.currentTab || !this.currentTab.id) {
+                this.showNotification('No active tab available to reset filter', 'error');
+                return;
+            }
+            // Remove filter from all tabs
+            await chrome.runtime.sendMessage({ action: 'removeFilter' });
+            // Update UI
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.textContent = 'Activate';
+                btn.classList.remove('active');
+            });
+            this.showNotification('All color filters reset', 'success');
+        } catch (error) {
+            console.error('Error resetting filters:', error);
+            this.showNotification('Could not reset filters', 'error');
+        }
+    }
 }
+
+// Ensure magnification content is loaded in the correct section
+window.addEventListener('DOMContentLoaded', () => {
+    // Only inject if not already present
+    if (!document.getElementById('extension-magnification-section')) {
+        // Find the magnification tab content section
+        const magnificationSection = document.getElementById('magnification');
+        if (magnificationSection) {
+            // Create a container for the magnification UI
+            const container = document.createElement('div');
+            container.id = 'extension-popup';
+            magnificationSection.appendChild(container);
+            // Initialize the magnification UI
+            if (window.ExtensionMagnificationUI) {
+                const magnificationUI = new window.ExtensionMagnificationUI();
+                magnificationUI.init();
+            }
+        }
+    }
+});
 
 // Initialize popup when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -888,6 +934,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         } else {
             sendResponse({success: false, message: 'Invalid tab name'});
         }
+    }
+});
+
+// Add more voice control commands for accessibility
+window.addEventListener('DOMContentLoaded', () => {
+    // Add extra commands to the voice commands list
+    const commandsList = document.querySelector('.commands-list');
+    if (commandsList) {
+        const extraCommands = [
+            { command: '"Increase zoom"', description: 'Zoom in the page' },
+            { command: '"Decrease zoom"', description: 'Zoom out the page' },
+            { command: '"Reset zoom"', description: 'Reset page zoom' },
+            { command: '"Change font"', description: 'Change font family' },
+            { command: '"Bold text"', description: 'Make text bold' },
+            { command: '"Lighten text"', description: 'Make text lighter' },
+            { command: '"Change background"', description: 'Change background color' },
+            { command: '"Show alt text"', description: 'Display image alt text' },
+            { command: '"Hide alt text"', description: 'Hide image alt text' },
+            { command: '"Enable focus indicators"', description: 'Show focus indicators' },
+            { command: '"Disable focus indicators"', description: 'Hide focus indicators' }
+        ];
+        extraCommands.forEach(cmd => {
+            const item = document.createElement('div');
+            item.className = 'command-item';
+            item.innerHTML = `<span class="command">${cmd.command}</span><span class="description">${cmd.description}</span>`;
+            commandsList.appendChild(item);
+        });
     }
 });
 

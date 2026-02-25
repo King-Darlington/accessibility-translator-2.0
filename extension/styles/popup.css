@@ -537,6 +537,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
     text-align: right;
 }
 
+/* Add white color for commands for visibility */
+.commands-list .command {
+    color: #fff !important;
+    font-weight: 700;
+    background: transparent;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
 /* Footer */
 .app-footer {
     padding: 15px 20px;
