@@ -134,7 +134,7 @@ class ColorFilterManager {
     generateFilterCSS(filterName) {
         const filterDefinitions = {
             grayscale: 'grayscale(100%)',
-            'high-contrast': 'contrast(200%) brightness(120%)',
+            'high-contrast': 'none',
             invert: 'invert(100%) hue-rotate(180deg)',
             sepia: 'sepia(100%)',
             'blue-light': 'sepia(30%) hue-rotate(180deg) saturate(150%)',
@@ -146,37 +146,67 @@ class ColorFilterManager {
 
         const filterValue = filterDefinitions[filterName] || 'none';
         
+        // For high-contrast, don't apply filter to everything - just enhance colors
+        if (filterName === 'high-contrast') {
+            return `
+                html, body {
+                    background-color: #ffffff !important;
+                    color: #000000 !important;
+                }
+                
+                body {
+                    filter: contrast(1.3) brightness(1.05) !important;
+                    -webkit-filter: contrast(1.3) brightness(1.05) !important;
+                }
+                
+                p, span, div, h1, h2, h3, h4, h5, h6, 
+                li, td, tr, th, label, section, article {
+                    color: #000000 !important;
+                    background-color: #ffffff !important;
+                }
+                
+                a {
+                    color: #003B49 !important;
+                    text-decoration: underline !important;
+                    font-weight: bold !important;
+                }
+                
+                button, input[type="button"], input[type="submit"], 
+                input[type="reset"], textarea, select {
+                    background-color: #003B49 !important;
+                    color: #ffffff !important;
+                    border: 2px solid #000000 !important;
+                    font-weight: bold !important;
+                }
+                
+                /* Preserve image visibility */
+                img, video, picture, svg {
+                    opacity: 0.95 !important;
+                    border: 1px solid #000000 !important;
+                }
+            `;
+        }
+        
+        // For invert filter, apply differently
+        if (filterName === 'invert') {
+            return `
+                html, body, body * {
+                    filter: invert(100%) !important;
+                    -webkit-filter: invert(100%) !important;
+                }
+                
+                img, video, picture, canvas {
+                    filter: invert(100%) !important;
+                    -webkit-filter: invert(100%) !important;
+                }
+            `;
+        }
+        
         return `
             html, body, body * {
                 filter: ${filterValue} !important;
                 -webkit-filter: ${filterValue} !important;
             }
-            
-            /* Preserve images and videos for some filters */
-            ${filterName === 'invert' ? `
-                img, video, iframe, canvas, svg, [style*="background-image"] {
-                    filter: invert(100%) hue-rotate(180deg) !important;
-                    -webkit-filter: invert(100%) hue-rotate(180deg) !important;
-                }
-            ` : ''}
-            
-            ${filterName === 'high-contrast' ? `
-                * {
-                    background-color: #000000 !important;
-                    color: #ffffff !important;
-                    border-color: #ffffff !important;
-                }
-                
-                a, a * {
-                    color: #ffff00 !important;
-                }
-                
-                button, input, textarea, select {
-                    background-color: #ffffff !important;
-                    color: #000000 !important;
-                    border: 2px solid #ffff00 !important;
-                }
-            ` : ''}
         `;
     }
 

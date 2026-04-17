@@ -10,13 +10,20 @@ class ExtensionBackground {
     }
 
     init() {
+        console.log('[AT] ExtensionBackground initialization started');
         try {
             this.setupEventListeners();
+            console.log('[AT] Event listeners set up');
+
             this.checkConnection();
+            console.log('[AT] Connection check initiated');
+
             this.initializeStorage();
-            console.log('ExtensionBackground initialized successfully');
+            console.log('[AT] Storage initialized');
+
+            console.log('[AT] ExtensionBackground initialized successfully');
         } catch (error) {
-            console.error('ExtensionBackground initialization error:', error);
+            console.error('[AT] ExtensionBackground initialization error:', error);
         }
     }
 
@@ -91,6 +98,7 @@ class ExtensionBackground {
     }
 
     async injectContentScript(tabId) {
+        console.log(`[AT] Injecting content script into tab ${tabId}`);
         try {
             if (!tabId || typeof tabId !== 'number') {
                 throw new Error('Invalid tabId provided');
@@ -100,39 +108,46 @@ class ExtensionBackground {
             await chrome.scripting.executeScript({
                 target: { tabId },
                 files: ['content.js'],
-                world: 'MAIN'
+                world: 'ISOLATED'
             });
+            console.log(`[AT] Content script injected into tab ${tabId}`);
 
             // Then inject CSS files
             await chrome.scripting.insertCSS({
                 target: { tabId },
                 files: ['styles/bubble.css', 'styles/animation.css']
             });
+            console.log(`[AT] CSS files injected into tab ${tabId}`);
 
-            console.log(`Content scripts injected successfully in tab ${tabId}`);
+            console.log(`[AT] Content scripts injected successfully in tab ${tabId}`);
         } catch (error) {
             // Don't throw - some tabs may not support script injection (system pages, etc.)
-            console.debug(`Content script injection skipped for tab ${tabId}:`, error.message);
+            console.debug(`[AT] Content script injection skipped for tab ${tabId}:`, error.message);
         }
     }
 
     async toggleBubble(tabId) {
+        console.log(`[AT] Toggling bubble in tab ${tabId}`);
         try {
             if (!tabId || typeof tabId !== 'number') {
                 throw new Error('Invalid tabId');
             }
 
             const response = await this.sendMessageToTab(tabId, { action: 'toggleBubble' });
+            console.log(`[AT] Bubble toggled successfully in tab ${tabId}`);
             return response;
         } catch (error) {
-            console.warn(`Could not toggle bubble in tab ${tabId}:`, error);
+            console.warn(`[AT] Could not toggle bubble in tab ${tabId}:`, error);
             // Try to inject content script and retry
             try {
+                console.log(`[AT] Retrying bubble toggle after content script injection for tab ${tabId}`);
                 await this.injectContentScript(tabId);
                 await new Promise(r => setTimeout(r, 250));
-                return await this.sendMessageToTab(tabId, { action: 'toggleBubble' });
+                const retryResponse = await this.sendMessageToTab(tabId, { action: 'toggleBubble' });
+                console.log(`[AT] Bubble toggle succeeded on retry for tab ${tabId}`);
+                return retryResponse;
             } catch (retryError) {
-                console.error('Bubble toggle failed even after injection:', retryError);
+                console.error('[AT] Bubble toggle failed even after injection:', retryError);
                 return { success: false, error: 'Could not toggle bubble' };
             }
         }
@@ -198,9 +213,12 @@ class ExtensionBackground {
 
                 case 'syncWithMain':
                     try {
+                        console.log(`[AT] Syncing with main site, data keys: ${Object.keys(request.data || {}).length}`);
                         const result = await this.syncWithMainSite(request.data || {});
+                        console.log('[AT] Sync with main site completed successfully');
                         sendResponse({ success: true, data: result });
                     } catch (error) {
+                        console.error('[AT] Sync with main site failed:', error);
                         sendResponse({ success: false, error: error.message });
                     }
                     break;
@@ -210,9 +228,12 @@ class ExtensionBackground {
                         if (!request.filter) {
                             throw new Error('No filter specified');
                         }
+                        console.log(`[AT] Applying filter: ${request.filter} to tab ${tabId}`);
                         await this.applyColorFilter(request.filter, tabId);
+                        console.log(`[AT] Filter ${request.filter} applied successfully`);
                         sendResponse({ success: true });
                     } catch (error) {
+                        console.error(`[AT] Filter application failed:`, error);
                         sendResponse({ success: false, error: error.message });
                     }
                     break;
@@ -281,6 +302,28 @@ class ExtensionBackground {
                     }
                     break;
 
+                case 'openExtensionTab':
+                    try {
+                        if (!request.tab) {
+                            throw new Error('No tab specified');
+                        }
+                        // Store the requested tab in storage so popup can read it
+                        await chrome.storage.session.set({ 
+                            requestedTab: request.tab,
+                            timestamp: Date.now()
+                        });
+                        // Try to open the popup
+                        chrome.action.openPopup(() => {
+                            if (chrome.runtime.lastError) {
+                                console.warn('Could not open popup:', chrome.runtime.lastError);
+                            }
+                        });
+                        sendResponse({ success: true });
+                    } catch (error) {
+                        sendResponse({ success: false, error: error.message });
+                    }
+                    break;
+
                 default:
                     sendResponse({ success: false, error: `Unknown action: ${action}` });
             }
@@ -297,9 +340,10 @@ class ExtensionBackground {
     initializeStorage() {
         const defaults = {
             tts: { voice: '', rate: 1, pitch: 1, volume: 1 },
-            filters: { active: null, custom: { brightness: 1, contrast: 1, saturation: 1 } },
+            filters: { active: 'normal', custom: { brightness: 1, contrast: 1, saturation: 1 } },
             voiceControl: { enabled: false, commands: [] },
-            bubble: { position: 'right', enabled: true }
+            bubble: { position: 'right', enabled: true },
+            activeFilter: 'normal'
         };
 
         chrome.storage.sync.get(null, (current) => {
@@ -343,8 +387,17 @@ class ExtensionBackground {
 
     async syncWithMainSite(userData) {
         try {
+            console.log('[AT] Attempting to sync with main site');
+
+            // Check connection status first
             if (!this.isConnected) {
-                throw new Error('Not connected to main site');
+                console.log('[AT] Not connected to main site, storing data locally');
+                // Store locally instead of throwing error
+                await chrome.storage.sync.set({
+                    pendingSync: userData,
+                    lastSyncAttempt: new Date().toISOString()
+                });
+                return { success: false, message: 'Not connected, data stored locally' };
             }
 
             if (!userData || typeof userData !== 'object') {
@@ -367,14 +420,26 @@ class ExtensionBackground {
             }
 
             const data = await response.json();
-            await chrome.storage.sync.set({ 
+            await chrome.storage.sync.set({
                 lastSync: new Date().toISOString(),
-                mainSiteData: data
+                mainSiteData: data,
+                pendingSync: null // Clear pending sync
             });
 
+            console.log('[AT] Sync with main site successful');
             return data;
         } catch (error) {
-            console.error('Sync error:', error);
+            console.error('[AT] Sync with main site failed:', error.message);
+            // Store data locally for later sync
+            try {
+                await chrome.storage.sync.set({
+                    pendingSync: userData,
+                    lastSyncError: error.message,
+                    lastSyncAttempt: new Date().toISOString()
+                });
+            } catch (storageError) {
+                console.error('[AT] Failed to store pending sync:', storageError);
+            }
             throw error;
         }
     }
@@ -385,9 +450,19 @@ class ExtensionBackground {
                 throw new Error('Invalid filter');
             }
 
-            const css = this.generateFilterCSS(filter);
-            
             if (tabId && typeof tabId === 'number') {
+                // First, remove any previously applied filter CSS
+                try {
+                    await chrome.scripting.removeCSS({
+                        target: { tabId },
+                        css: `.at-color-filter-placeholder { }` // Dummy to clear previous
+                    });
+                } catch (e) {
+                    // Continue even if removal fails (CSS may not exist)
+                }
+
+                // Now apply the new filter CSS
+                const css = this.generateFilterCSS(filter);
                 await chrome.scripting.insertCSS({
                     target: { tabId },
                     css: css
@@ -402,10 +477,68 @@ class ExtensionBackground {
     }
 
     generateFilterCSS(filter) {
+        // Normal filter - no filter applied
+        if (filter === 'normal' || (!filter)) {
+            return `html, body, body * { filter: none !important; -webkit-filter: none !important; }`;
+        }
+
+        // High-contrast needs special handling to avoid darkening the page
+        if (filter === 'high-contrast') {
+            return `
+                html, body {
+                    background-color: #ffffff !important;
+                    color: #000000 !important;
+                }
+                
+                body {
+                    filter: contrast(1.3) brightness(1.05) !important;
+                    -webkit-filter: contrast(1.3) brightness(1.05) !important;
+                }
+                
+                p, span, div, h1, h2, h3, h4, h5, h6, 
+                li, td, tr, th, label, section, article {
+                    color: #000000 !important;
+                    background-color: #ffffff !important;
+                }
+                
+                a {
+                    color: #003B49 !important;
+                    text-decoration: underline !important;
+                    font-weight: bold !important;
+                }
+                
+                button, input[type="button"], input[type="submit"], 
+                input[type="reset"], textarea, select {
+                    background-color: #003B49 !important;
+                    color: #ffffff !important;
+                    border: 2px solid #000000 !important;
+                    font-weight: bold !important;
+                }
+                
+                img, video, picture, svg {
+                    opacity: 0.95 !important;
+                    border: 1px solid #000000 !important;
+                }
+            `;
+        }
+
+        // Invert filter needs special handling to invert images too
+        if (filter === 'invert') {
+            return `
+                html, body, body * {
+                    filter: invert(100%) !important;
+                    -webkit-filter: invert(100%) !important;
+                }
+                
+                img, video, picture, canvas {
+                    filter: invert(100%) !important;
+                    -webkit-filter: invert(100%) !important;
+                }
+            `;
+        }
+
         const filters = {
             grayscale: 'grayscale(100%)',
-            'high-contrast': 'contrast(200%) brightness(120%)',
-            invert: 'invert(100%)',
             sepia: 'sepia(100%)',
             'blue-light': 'sepia(30%) hue-rotate(180deg)',
             protanopia: 'url(#protanopia-filter)',
@@ -414,7 +547,7 @@ class ExtensionBackground {
         };
         
         const rule = filters[filter] || 'none';
-        return `html, body, * { filter: ${rule} !important; -webkit-filter: ${rule} !important; }`;
+        return `html, body, body * { filter: ${rule} !important; -webkit-filter: ${rule} !important; }`;
     }
 
     speakText(text, options = {}) {

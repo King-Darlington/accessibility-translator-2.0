@@ -5,338 +5,242 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accessibility Translator</title>
     <link rel="stylesheet" href="styles/popup.css">
-    <link rel="stylesheet" href="styles/animations.css">
-    <link rel="stylesheet" href="styles/magnification.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-    <div class="app-container"> 
-        <!-- Header with Logo -->
-        <header class="app-header">
-            <div class="logo-container">
-                <div class="logo-gradient">
-                    <i class="fas fa-eye"></i>
-                </div>
-                <h1>Accessibility<span>Translator</span></h1>
+    <div class="popup-container">
+        <!-- Header -->
+        <div class="popup-header">
+            <div class="logo-section">
+                <i class="fas fa-eye logo-icon" aria-hidden="true"></i>
+                <h1>Accessibility Translator</h1>
             </div>
             <div class="connection-status" id="connectionStatus">
-                <span class="status-dot"></span>
-                <span>Connected to Main Site</span>
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Checking...</span>
             </div>
-        </header>
+        </div>
 
-        <!-- Main Navigation -->
-        <nav class="main-nav">
+        <!-- Navigation -->
+        <nav class="nav-tabs" role="tablist">
+            <button class="nav-item active" data-tab="tts" role="tab" aria-selected="true">
+                <i class="fas fa-volume-up" aria-hidden="true"></i>
+                <span>Speech</span>
+            </button>
+            <button class="nav-item" data-tab="scanning" role="tab" aria-selected="false">
+                <i class="fas fa-camera" aria-hidden="true"></i>
+                <span>Scan</span>
+            </button>
+            <button class="nav-item" data-tab="filters" role="tab" aria-selected="false">
+                <i class="fas fa-palette" aria-hidden="true"></i>
+                <span>Filters</span>
+            </button>
+            <button class="nav-item" data-tab="voice" role="tab" aria-selected="false">
+                <i class="fas fa-microphone" aria-hidden="true"></i>
+                <span>Voice</span>
+            </button>
+            <button class="nav-item" data-tab="settings" role="tab" aria-selected="false">
+                <i class="fas fa-cog" aria-hidden="true"></i>
+                <span>Settings</span>
+            </button>
             <div class="nav-selector"></div>
-            <button class="nav-item active" data-tab="magnification">
-                <i class="fas fa-search-plus"></i>
-                <span>Magnification</span>
-            </button>
-            <button class="nav-item" data-tab="tts">
-                <i class="fas fa-volume-up"></i>
-                <span>Text to Speech</span>
-            </button>
-            <button class="nav-item" data-tab="scanning">
-                <i class="fas fa-camera"></i>
-                <span>Object Scanning</span>
-            </button>
-            <button class="nav-item" data-tab="filters">
-                <i class="fas fa-palette"></i>
-                <span>Color Filters</span>
-            </button>
-            <button class="nav-item" data-tab="voice">
-                <i class="fas fa-microphone"></i>
-                <span>Voice Control</span>
-            </button>
         </nav>
 
-        <!-- Content Sections -->
-        <main class="content-area">
-            <!-- Magnification Section -->
-            <section id="magnification" class="tab-content active"></section>
-
-            <!-- Text to Speech Section -->
-            <section id="tts" class="tab-content">
-                <div class="section-header">
-                    <h2>Text to Speech</h2>
-                    <div class="voice-controls">
-                        <button class="control-btn" id="playAll">
-                            <i class="fas fa-play"></i>
-                            Read Page
-                        </button>
-                        <button class="control-btn" id="stopAll">
-                            <i class="fas fa-stop"></i>
-                            Stop
-                        </button>
-                    </div>
-                </div>
-
-                <div class="tts-controls">
+        <!-- Tab Content -->
+        <div class="tab-content-container">
+            <!-- Text-to-Speech Tab -->
+            <div id="tts" class="tab-content active">
+                <div class="control-section">
+                    <h3>Text to Speech</h3>
                     <div class="control-group">
                         <label for="voiceSelect">Voice</label>
-                        <select id="voiceSelect" class="styled-select">
+                        <select id="voiceSelect" class="form-control">
                             <option value="">Loading voices...</option>
                         </select>
                     </div>
-
                     <div class="control-group">
                         <label for="rate">Speed: <span id="rateValue">1.0</span></label>
                         <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
                     </div>
-
                     <div class="control-group">
                         <label for="pitch">Pitch: <span id="pitchValue">1.0</span></label>
                         <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1">
                     </div>
-
                     <div class="control-group">
                         <label for="volume">Volume: <span id="volumeValue">1.0</span></label>
                         <input type="range" id="volume" min="0" max="1" step="0.1" value="1">
                     </div>
-                </div>
-
-                <div class="quick-actions">
-                    <h3>Quick Actions</h3>
-                    <div class="action-grid">
+                    <div class="button-group">
+                        <button id="playAll" class="btn btn-primary">
+                            <i class="fas fa-play" aria-hidden="true"></i> Read Page
+                        </button>
+                        <button id="stopAll" class="btn btn-secondary">
+                            <i class="fas fa-stop" aria-hidden="true"></i> Stop
+                        </button>
+                    </div>
+                    <div class="quick-actions">
                         <button class="action-btn" data-action="read-headers">
-                            <i class="fas fa-heading"></i>
-                            Read Headers
+                            <i class="fas fa-heading" aria-hidden="true"></i> Headers
                         </button>
                         <button class="action-btn" data-action="read-links">
-                            <i class="fas fa-link"></i>
-                            Read Links
+                            <i class="fas fa-link" aria-hidden="true"></i> Links
                         </button>
                         <button class="action-btn" data-action="read-images">
-                            <i class="fas fa-image"></i>
-                            Read Images
+                            <i class="fas fa-image" aria-hidden="true"></i> Images
                         </button>
                         <button class="action-btn" data-action="read-selected">
-                            <i class="fas fa-mouse-pointer"></i>
-                            Read Selected
+                            <i class="fas fa-mouse-pointer" aria-hidden="true"></i> Selected
                         </button>
                     </div>
-                </div>
-            </section>
-
-            <!-- Object Scanning Section -->
-            <section id="scanning" class="tab-content">
-                <div class="section-header">
-                    <h2>Object & Text Scanning</h2>
-                    <div class="scan-modes">
-                        <button class="mode-btn active" data-mode="camera">
-                            <i class="fas fa-camera"></i>
-                            Camera
-                        </button>
-                        <button class="mode-btn" data-mode="upload">
-                            <i class="fas fa-upload"></i>
-                            Upload
-                        </button>
-                        <button class="mode-btn" data-mode="screen">
-                            <i class="fas fa-desktop"></i>
-                            Screen
-                        </button>
-                    </div>
-                </div>
-
-                <div class="scanning-interface">
-                    <div class="camera-preview hidden" id="cameraPreview">
-                        <video id="cameraFeed" autoplay playsinline></video>
-                        <div class="camera-controls">
-                            <button class="control-btn" id="capture">
-                                <i class="fas fa-camera"></i>
-                                Capture
-                            </button>
-                            <button class="control-btn" id="stopCamera">
-                                <i class="fas fa-stop"></i>
-                                Stop
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="upload-area" id="uploadArea">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <p>Drag & drop image or click to upload</p>
-                        <input type="file" id="fileInput" accept="image/*" hidden>
-                    </div>
-
-                    <div class="results-area hidden" id="resultsArea">
-                        <h3>Detection Results</h3>
-                        <div class="results-list" id="resultsList"></div>
-                        <button class="control-btn" id="readResults">
-                            <i class="fas fa-volume-up"></i>
-                            Read Results
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Color Filters Section -->
-            <section id="filters" class="tab-content">
-                <div class="section-header">
-                    <h2>Accessibility Filters</h2>
-                    <div class="filter-controls">
-                        <button class="control-btn" id="resetFilters">
-                            <i class="fas fa-times"></i>
-                            Reset
-                        </button>
-                    </div>
-                </div>
-
-                <div class="filters-grid">
-                    <div class="filter-card" data-filter="grayscale">
-                        <div class="filter-preview grayscale"></div>
-                        <h3>Grayscale</h3>
-                        <p>Reduces color complexity</p>
-                        <button class="filter-btn">Activate</button>
-                    </div>
-
-                    <div class="filter-card" data-filter="high-contrast">
-                        <div class="filter-preview high-contrast"></div>
-                        <h3>High Contrast</h3>
-                        <p>Enhanced visibility</p>
-                        <button class="filter-btn">Activate</button>
-                    </div>
-
-                    <div class="filter-card" data-filter="invert">
-                        <div class="filter-preview invert"></div>
-                        <h3>Invert Colors</h3>
-                        <p>Reverse color scheme</p>
-                        <button class="filter-btn">Activate</button>
-                    </div>
-
-                    <div class="filter-card" data-filter="sepia">
-                        <div class="filter-preview sepia"></div>
-                        <h3>Sepia</h3>
-                        <p>Reduced eye strain</p>
-                        <button class="filter-btn">Activate</button>
-                    </div>
-
-                    <div class="filter-card" data-filter="blue-light">
-                        <div class="filter-preview blue-light"></div>
-                        <h3>Blue Light</h3>
-                        <p>Reduces blue light</p>
-                        <button class="filter-btn">Activate</button>
-                    </div>
-
-                    <div class="filter-card" data-filter="protanopia">
-                        <div class="filter-preview protanopia"></div>
-                        <h3>Protanopia</h3>
-                        <p>Red-green color blind</p>
-                        <button class="filter-btn">Activate</button>
-                    </div>
-
-                    <div class="filter-card" data-filter="deuteranopia">
-                        <div class="filter-preview deuteranopia"></div>
-                        <h3>Deuteranopia</h3>
-                        <p>Green color blind</p>
-                        <button class="filter-btn">Activate</button>
-                    </div>
-
-                    <div class="filter-card" data-filter="tritanopia">
-                        <div class="filter-preview tritanopia"></div>
-                        <h3>Tritanopia</h3>
-                        <p>Blue-yellow color blind</p>
-                        <button class="filter-btn">Activate</button>
-                    </div>
-                </div>
-
-                <div class="custom-filters">
-                    <h3>Custom Settings</h3>
-                    <div class="custom-controls">
-                        <div class="control-group">
-                            <label for="brightness">Brightness</label>
-                            <input type="range" id="brightness" min="0.5" max="2" step="0.1" value="1">
-                        </div>
-                        <div class="control-group">
-                            <label for="contrast">Contrast</label>
-                            <input type="range" id="contrast" min="0.5" max="2" step="0.1" value="1">
-                        </div>
-                        <div class="control-group">
-                            <label for="saturation">Saturation</label>
-                            <input type="range" id="saturation" min="0" max="2" step="0.1" value="1">
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Voice Control Section -->
-            <section id="voice" class="tab-content">
-                <div class="section-header">
-                    <h2>Voice Control</h2>
-                    <div class="voice-status">
-                        <div class="voice-indicator" id="voiceIndicator">
-                            <div class="pulse"></div>
-                            <i class="fas fa-microphone"></i>
-                        </div>
-                        <span id="voiceStatus">Ready</span>
-                    </div>
-                </div>
-
-                <div class="voice-controls-main">
-                    <button class="voice-toggle" id="voiceToggle">
-                        <i class="fas fa-microphone"></i>
-                        <span>Start Voice Control</span>
-                    </button>
-
-                    <div class="voice-commands">
-                        <h3>Available Commands</h3>
-                        <div class="commands-list">
-                            <div class="command-item">
-                                <span class="command">"Read page"</span>
-                                <span class="description">Read entire page content</span>
-                            </div>
-                            <div class="command-item">
-                                <span class="command">"Stop reading"</span>
-                                <span class="description">Stop current speech</span>
-                            </div>
-                            <div class="command-item">
-                                <span class="command">"Activate [filter]"</span>
-                                <span class="description">Apply color filter</span>
-                            </div>
-                            <div class="command-item">
-                                <span class="command">"Scan page"</span>
-                                <span class="description">Scan for objects/text</span>
-                            </div>
-                            <div class="command-item">
-                                <span class="command">"Navigate to [section]"</span>
-                                <span class="description">Jump to page section</span>
-                            </div>
-                            <div class="command-item">
-                                <span class="command">"Click [element]"</span>
-                                <span class="description">Click specific element</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="app-footer">
-            <div class="footer-content">
-                <div class="sync-status">
-                    <button class="sync-btn" id="syncWithMain">
-                        <i class="fas fa-sync"></i>
-                        Sync with Main Site
-                    </button>
-                </div>
-                <div class="footer-links">
-                    <button class="footer-link" id="settingsBtn">
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <button class="footer-link" id="helpBtn">
-                        <i class="fas fa-question-circle"></i>
-                    </button>
                 </div>
             </div>
-        </footer>
+
+            <!-- Object Scanning Tab -->
+            <div id="scanning" class="tab-content">
+                <div class="control-section">
+                    <h3>Object Scanning</h3>
+                    <div class="scan-options">
+                        <button id="startCamera" class="btn btn-primary">
+                            <i class="fas fa-camera" aria-hidden="true"></i> Camera
+                        </button>
+                        <button id="uploadImage" class="btn btn-secondary">
+                            <i class="fas fa-upload" aria-hidden="true"></i> Upload
+                        </button>
+                        <button id="scanScreen" class="btn btn-secondary">
+                            <i class="fas fa-desktop" aria-hidden="true"></i> Screen
+                        </button>
+                    </div>
+                    <div id="scanResults" class="scan-results" style="display: none;">
+                        <h4>Scan Results</h4>
+                        <div id="scanContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Color Filters Tab -->
+            <div id="filters" class="tab-content">
+                <div class="control-section">
+                    <h3>Color Filters</h3>
+                    <div class="filter-grid">
+                        <button class="filter-btn" data-filter="grayscale">
+                            <i class="fas fa-adjust" aria-hidden="true"></i>
+                            <span>Grayscale</span>
+                        </button>
+                        <button class="filter-btn" data-filter="high-contrast">
+                            <i class="fas fa-sun" aria-hidden="true"></i>
+                            <span>High Contrast</span>
+                        </button>
+                        <button class="filter-btn" data-filter="invert">
+                            <i class="fas fa-exchange-alt" aria-hidden="true"></i>
+                            <span>Invert</span>
+                        </button>
+                        <button class="filter-btn" data-filter="sepia">
+                            <i class="fas fa-image" aria-hidden="true"></i>
+                            <span>Sepia</span>
+                        </button>
+                        <button class="filter-btn" data-filter="blue-light">
+                            <i class="fas fa-moon" aria-hidden="true"></i>
+                            <span>Blue Light</span>
+                        </button>
+                        <button id="resetFilters" class="filter-btn reset">
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                            <span>Reset</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Control Tab -->
+            <div id="voice" class="tab-content">
+                <div class="control-section">
+                    <h3>Voice Control</h3>
+                    <div class="voice-status">
+                        <div class="status-indicator" id="voiceStatus">
+                            <i class="fas fa-microphone-slash" aria-hidden="true"></i>
+                            <span>Voice control is off</span>
+                        </div>
+                    </div>
+                    <button id="voiceToggle" class="btn btn-primary">
+                        <i class="fas fa-microphone" aria-hidden="true"></i> Start Voice Control
+                    </button>
+                    <div class="voice-commands">
+                        <h4>Voice Commands</h4>
+                        <div class="command-list">
+                            <div class="command-item">
+                                <strong>"Read page"</strong> - Read entire page
+                            </div>
+                            <div class="command-item">
+                                <strong>"Stop reading"</strong> - Stop speech
+                            </div>
+                            <div class="command-item">
+                                <strong>"Activate [filter]"</strong> - Apply color filter
+                            </div>
+                            <div class="command-item">
+                                <strong>"Remove filter"</strong> - Clear filters
+                            </div>
+                            <div class="command-item">
+                                <strong>"Scan page"</strong> - Start object scanning
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <div class="control-section">
+                    <h3>Settings</h3>
+                    <div class="settings-group">
+                        <button id="syncWithMain" class="btn btn-secondary">
+                            <i class="fas fa-sync" aria-hidden="true"></i> Sync with Main Site
+                        </button>
+                        <button id="settingsBtn" class="btn btn-secondary">
+                            <i class="fas fa-cog" aria-hidden="true"></i> Preferences
+                        </button>
+                        <button id="helpBtn" class="btn btn-secondary">
+                            <i class="fas fa-question-circle" aria-hidden="true"></i> Help
+                        </button>
+                    </div>
+                    <div class="connection-info">
+                        <p><strong>Status:</strong> <span id="status-text">Checking...</span></p>
+                        <p><strong>Version:</strong> 2.0.0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="login-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Connect to Main Site</h3>
+                    <button id="login-close-btn" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="extension-login-form">
+                        <div class="form-group">
+                            <label for="login-email">Email</label>
+                            <input type="email" id="login-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <input type="password" id="login-password" required>
+                        </div>
+                        <div id="login-error" class="error-message" style="display: none;"></div>
+                        <button type="submit" id="login-submit-btn" class="btn btn-primary">Connect</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connect Button (shown when not connected) -->
+        <div class="connect-section" id="connect-section" style="display: none;">
+            <button id="connect-btn" class="btn btn-primary">
+                <i class="fas fa-link" aria-hidden="true"></i> Connect to Main Site
+            </button>
+        </div>
     </div>
 
     <script src="scripts/popup.js"></script>
-    <script src="scripts/magnification-ui.js"></script>
-    <script src="scripts/tts.js"></script>
-    <script src="scripts/object-scanning.js"></script>
-    <script src="scripts/color-filters.js"></script>
-    <script src="scripts/voice-control.js"></script>
 </body>
 </html>

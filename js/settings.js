@@ -169,6 +169,7 @@ class SettingsManager {
             clearCache: () => this.clearCache(),
             backupNow: () => this.createBackup(),
             restoreBackup: () => this.restoreFromBackup(),
+            loginBtn: () => this.handleLogin(),
             logoutBtn: () => this.handleLogout()
         };
 
@@ -1203,9 +1204,18 @@ class SettingsManager {
 
     toggleLogoutButton(show = false) {
         const logoutBtn = document.getElementById('logoutBtn');
+        const loginBtn = document.getElementById('loginBtn');
         if (logoutBtn) {
             logoutBtn.style.display = show ? 'flex' : 'none';
         }
+        if (loginBtn) {
+            loginBtn.style.display = show ? 'none' : 'flex';
+        }
+    }
+
+    handleLogin() {
+        // Redirect to the main login/signup page
+        window.location.href = 'index.html';
     }
 
     async handleLogout() {

@@ -120,6 +120,9 @@
                             <h4 id="profileName">Guest User</h4>
                             <p id="profileEmail">Not logged in</p>
                         </div>
+                        <button type="button" id="loginBtn" class="login-btn" title="Log in to your account">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </button>
                         <button id="logoutBtn" class="logout-btn" style="display: none;">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
@@ -703,10 +706,6 @@
             crossorigin="anonymous"
             onerror="console.error('Failed to load Bootstrap')"></script>
     <!-- Application Scripts - Load in dependency order -->
-    <!-- Voice Control Scripts - Order matters: commands first, then integration, then loader -->
-    <script src="js/voice_commands.js"></script>
-    <script src="js/voice_integration.js"></script>
-    <script src="js/voice_loader.js" defer></script>
     <script src="js/magnification.js" defer onerror="console.error('Failed to load magnification.js')"></script>
     <script src="js/main.js" defer onerror="console.error('Failed to load main.js')"></script>
     <script src="js/settings.js" defer onerror="console.error('Failed to load settings.js')"></script>

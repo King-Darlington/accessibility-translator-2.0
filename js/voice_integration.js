@@ -5,6 +5,7 @@
 
 class VoiceIntegration {
     constructor() {
+        console.log('🔧 VoiceIntegration constructor called');
         this.isListening = false;
         this.recognition = null;
         this.isContinuous = true;
@@ -12,14 +13,20 @@ class VoiceIntegration {
         this.settings = {};
         this.initAttempts = 0;
         this.maxAttempts = 100; // 10 seconds
+        this.isStarting = false; // NEW: guard against double-start
+        console.log('🔧 Calling init() from constructor...');
         this.init();
     }
 
     async init() {
+        console.log(`🔧 init() called (attempt ${this.initAttempts}/${this.maxAttempts})`);
+        console.log('🔧 Checking if VoiceCommandsLib is defined:', typeof VoiceCommandsLib);
+        
         // Wait for VoiceCommandsLib to load (with timeout)
         if (typeof VoiceCommandsLib === 'undefined') {
             this.initAttempts++;
             if (this.initAttempts < this.maxAttempts) {
+                console.log(`🔧 VoiceCommandsLib not ready, retrying in 100ms...`);
                 setTimeout(() => this.init(), 100);
             } else {
                 console.warn('VoiceCommandsLib failed to load, continuing anyway');
@@ -28,21 +35,31 @@ class VoiceIntegration {
             return;
         }
 
+        console.log('✅ VoiceCommandsLib is available, proceeding...');
         this.continueInit();
     }
 
     continueInit() {
+        console.log('🔧 continueInit() starting...');
+        
         // Load settings from page settings manager if available
         if (window.settingsManager && window.settingsManager.isInitialized) {
+            console.log('🔧 Settings manager found');
             this.settings = window.settingsManager.settings;
             this.selectedLanguage = this.settings.voiceControl?.language || 'en-US';
+        } else {
+            console.log('🔧 Settings manager not available');
         }
 
+        console.log('🔧 Setting up speech recognition...');
         this.setupSpeechRecognition();
+        
+        console.log('🔧 Adding voice button to page...');
         this.addVoiceButton();
 
         // Auto-start if enabled in settings
         if (this.settings.voiceControl?.enabled) {
+            console.log('🔧 Auto-starting listening (enabled in settings)');
             this.startListening();
         }
 
@@ -50,52 +67,88 @@ class VoiceIntegration {
     }
 
     setupSpeechRecognition() {
+        console.log('🔧 setupSpeechRecognition() called');
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         
         if (!SpeechRecognition) {
-            console.warn('🚨 Speech Recognition not supported in this browser');
+            console.warn('🚨 Speech Recognition API NOT found in browser');
             return;
         }
 
+        console.log('✅ Speech Recognition API available');
         this.recognition = new SpeechRecognition();
-        this.recognition.continuous = false; // Changed to false for better offline support
-        this.recognition.interimResults = false; // Disabled for offline mode
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
         this.recognition.lang = this.selectedLanguage;
 
-        this.recognition.onstart = () => this.onStart();
-        this.recognition.onresult = (event) => this.onResult(event);
-        this.recognition.onerror = (event) => this.onError(event);
-        this.recognition.onend = () => this.onEnd();
+        console.log(`🔧 Speech Recognition configured: language=${this.selectedLanguage}, continuous=false`);
+        console.log('🔧 Event handlers attaching...');
+
+        this.recognition.onstart = () => {
+            console.log('🎤 [SPEECH RECOGNITION] onstart fired - microphone is listening');
+            this.onStart();
+        };
+        
+        this.recognition.onresult = (event) => {
+            console.log('🎤 [SPEECH RECOGNITION] onresult fired, results count:', event.results.length);
+            for (let i = 0; i < event.results.length; i++) {
+                console.log(`   Result ${i}:`, event.results[i]);
+            }
+            this.onResult(event);
+        };
+        
+        this.recognition.onerror = (event) => {
+            console.warn('🎤 [SPEECH RECOGNITION] onerror fired, error:', event.error);
+            this.onError(event);
+        };
+        
+        this.recognition.onend = () => {
+            console.log('🎤 [SPEECH RECOGNITION] onend fired - recognition stopped');
+            this.onEnd();
+        };
+
+        console.log('✅ Speech Recognition event handlers attached');
     }
 
     onStart() {
+        console.log('🎤 onStart() - Recognition started listening, clearing isStarting flag');
+        this.isStarting = false; // clear the starting flag
         this.isListening = true;
         this.updateVoiceButtonState();
-        console.log('🎤 Voice listening started');
+        console.log('🎤 Voice listening started, playing beep...');
         this.playActivationSound();
     }
 
     onResult(event) {
+        console.log('🎤 onResult() - processing ' + event.results.length + ' result(s)');
         let interimTranscript = '';
         let finalTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
+            const transcript = event.results[i][0].transcript.toLowerCase();
+            const isFinal = event.results[i].isFinal;
 
-            if (event.results[i].isFinal) {
+            console.log(`  Result ${i}: "${transcript}" (final: ${isFinal}, confidence: ${event.results[i][0].confidence.toFixed(2)})`);
+
+            if (isFinal) {
                 finalTranscript += transcript + ' ';
             } else {
                 interimTranscript += transcript;
             }
         }
 
+        console.log('🎤 Final transcript:', finalTranscript.trim() || '(none)');
+        console.log('🎤 Interim transcript:', interimTranscript || '(none)');
+
         if (finalTranscript) {
+            console.log('🎤 Processing voice command:', finalTranscript.trim());
             this.processVoiceCommand(finalTranscript.trim());
         }
     }
 
     onError(event) {
         console.error('🚨 Speech recognition error:', event.error);
+        this.isStarting = false; // clear the starting flag
         if (event.error === 'not-allowed') {
             this.showFeedback('Microphone access denied. Please enable microphone permissions.', 'error');
         } else if (event.error === 'network' || event.error === 'network-error') {
@@ -107,38 +160,86 @@ class VoiceIntegration {
     }
 
     onEnd() {
+        console.log('🎤 onEnd() - Recognition ended');
+        console.log('  - wasListening before:', this.isListening);
+        this.isStarting = false; // clear the starting flag
         this.isListening = false;
         this.updateVoiceButtonState();
 
         // Auto-restart if continuous listening enabled
         if (this.isContinuous && this.settings.voiceControl?.enabled) {
+            console.log('🎤 Auto-restart enabled, waiting 500ms...');
             setTimeout(() => this.startListening(), 500);
+        } else {
+            console.log('🎤 No auto-restart (isContinuous:', this.isContinuous, ', voiceControl.enabled:', this.settings.voiceControl?.enabled, ')');
         }
     }
 
     startListening() {
+        console.log('🎤 startListening() called');
+        console.log('  - this.recognition exists:', !!this.recognition);
+        console.log('  - this.isListening:', this.isListening);
+        console.log('  - this.isStarting:', this.isStarting);
+        console.log('  - recognition.constructor:', this.recognition?.constructor?.name);
+        
         if (!this.recognition) {
+            console.error('🚨 Speech Recognition object not initialized!');
+            console.error('🚨 SpeechRecognition constructor:', window.SpeechRecognition || window.webkitSpeechRecognition);
             this.showFeedback('Voice recognition not available in this browser', 'error');
             return;
         }
 
+        if (this.isStarting) {
+            console.warn('⚠️ Recognition already starting, ignoring duplicate call');
+            return;
+        }
+
+        if (this.isListening) {
+            console.warn('⚠️ Already listening, ignoring start() call');
+            return;
+        }
+
         try {
+            this.isStarting = true;
+            console.log('🎤 Calling recognition.start()...');
+            console.log('🎤 Current recognition state before start:', {
+                continuous: this.recognition.continuous,
+                interimResults: this.recognition.interimResults,
+                lang: this.recognition.lang
+            });
             this.recognition.start();
+            console.log('✅ recognition.start() called successfully');
         } catch (e) {
-            console.warn('Recognition already started or error:', e);
+            console.warn('⚠️ Error calling recognition.start():', e.message);
+            console.error('⚠️ Full error:', e);
+            this.isStarting = false;
         }
     }
 
     stopListening() {
+        console.log('🎤 stopListening() called');
+        console.log('  - this.recognition exists:', !!this.recognition);
+        console.log('  - this.isListening:', this.isListening);
         if (this.recognition) {
-            this.recognition.stop();
+            try {
+                console.log('🎤 Calling recognition.stop()...');
+                this.recognition.stop();
+                console.log('✅ recognition.stop() called');
+            } catch (e) {
+                console.warn('⚠️ Error calling recognition.stop():', e.message);
+            }
+        } else {
+            console.warn('⚠️ No recognition object to stop');
         }
     }
 
     toggleListening() {
+        console.log('🎤 toggleListening() called, currently listening:', this.isListening);
         if (this.isListening) {
+            console.log('🎤 Currently listening, stopping...');
             this.stopListening();
         } else {
+            console.log('🎤 Not listening, starting...');
             this.startListening();
         }
     }
@@ -168,75 +269,108 @@ class VoiceIntegration {
     }
 
     processVoiceCommand(transcript) {
-        console.log('Voice input:', transcript);
+        console.log('🎯 processVoiceCommand() called with:', transcript);
 
         // Check if VoiceCommandsLib is available
         if (typeof VoiceCommandsLib === 'undefined') {
+            console.error('🚨 VoiceCommandsLib not available!');
             this.showFeedback('Voice commands library not loaded', 'warning');
             return;
         }
 
+        console.log('✅ VoiceCommandsLib available, attempting to match input...');
+        
         // Use VoiceCommandsLib to match command
         const match = VoiceCommandsLib.matchInput(transcript);
         const threshold = 0.55;
 
+        console.log('🎯 Match result:', match);
+        console.log('  - Command matched:', match?.command?.id || 'NONE');
+        console.log('  - Score:', match?.score || 'N/A');
+        console.log('  - Threshold:', threshold);
+        console.log('  - Phrase matched:', match?.phrase || 'NONE');
+
         if (!match || match.score < threshold) {
+            console.warn(`🚨 No match or score too low (${match?.score || 0} < ${threshold})`);
             this.showFeedback(`"${transcript}" - not recognized. Say "help" for commands.`, 'warning');
             return;
         }
 
         console.log('✅ Matched command:', match.command.id, 'Score:', match.score);
+        console.log('🎯 Executing command:', {
+            id: match.command.id,
+            action: match.command.action,
+            params: match.command.params
+        });
         this.executeCommand(match.command);
     }
 
     executeCommand(cmdObj) {
-        if (!cmdObj || !cmdObj.action) return;
+        console.log('🚀 executeCommand() - Starting command execution');
+        if (!cmdObj || !cmdObj.action) {
+            console.error('🚨 Invalid command object:', cmdObj);
+            return;
+        }
+
+        console.log('🚀 Command action:', cmdObj.action);
+        console.log('🚀 Command params:', cmdObj.params);
 
         switch (cmdObj.action) {
             case 'navigate':
+                console.log('🚀 Executing NAVIGATE action to:', cmdObj.params.target);
                 this.handleNavigate(cmdObj.params.target);
                 break;
 
             case 'filter':
+                console.log('🚀 Executing FILTER action:', cmdObj.params.filter);
                 this.handleFilterCommand(cmdObj.params.filter);
                 break;
 
             case 'tts':
+                console.log('🚀 Executing TTS action:', cmdObj.params.mode);
                 this.handleTTSCommand(cmdObj.params.mode);
                 break;
 
             case 'scan':
+                console.log('🚀 Executing SCAN action:', cmdObj.params.scope);
                 this.handleScanCommand(cmdObj.params.scope);
                 break;
 
             case 'accessibility':
+                console.log('🚀 Executing ACCESSIBILITY action:', cmdObj.params.cmd);
                 this.handleAccessibilityCommand(cmdObj.params.cmd);
                 break;
 
             case 'theme':
+                console.log('🚀 Executing THEME action:', cmdObj.params.theme);
                 this.handleThemeCommand(cmdObj.params.theme);
                 break;
 
             case 'help':
+                console.log('🚀 Executing HELP action');
                 this.showAvailableCommands();
                 break;
 
             case 'extension':
+                console.log('🚀 Executing EXTENSION action:', cmdObj.params.cmd);
                 this.handleExtensionCommand(cmdObj.params.cmd);
                 break;
 
             case 'voice':
+                console.log('🚀 Executing VOICE toggle action');
                 this.toggleListening();
                 this.showFeedback('Voice control toggled');
                 break;
 
             case 'sync':
+                console.log('🚀 Executing SYNC action');
                 this.showFeedback('Settings synced with extension');
                 break;
 
             default:
-                console.warn('Unknown action:', cmdObj.action);
+                console.warn('🚨 Unknown action:', cmdObj.action);
         }
+        console.log('🚀 Command execution completed');
     }
 
     handleNavigate(target) {
@@ -317,8 +451,39 @@ class VoiceIntegration {
         utterance.rate = this.settings.tts?.rate || 1;
         utterance.pitch = this.settings.tts?.pitch || 1;
         utterance.volume = (this.settings.tts?.volume || 100) / 100;
-        
+
+        const preferredVoice = this.getPreferredVoice();
+        if (preferredVoice) {
+            utterance.voice = preferredVoice;
+            console.log('Using voice:', preferredVoice.name, preferredVoice.lang);
+        }
+
         speechSynthesis.speak(utterance);
+    }
+
+    getPreferredVoice() {
+        if (!window.speechSynthesis) return null;
+
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || !voices.length) return null;
+
+        const normalized = (str) => (str || '').toLowerCase();
+
+        // Best match: en-NG or explicit Nigerian/African voice name
+        let preferred = voices.find(v => normalized(v.lang) === 'en-ng');
+        if (!preferred) {
+            preferred = voices.find(v => normalized(v.name).includes('nigerian') || normalized(v.name).includes('african'));
+        }
+        if (!preferred) {
+            preferred = voices.find(v => normalized(v.lang).startsWith('en-') && (normalized(v.name).includes('africa') || normalized(v.name).includes('afro')));
+        }
+
+        // fallback to any en-GB / en-US if African style isn't available
+        if (!preferred) {
+            preferred = voices.find(v => normalized(v.lang) === 'en-gb' || normalized(v.lang) === 'en-us');
+        }
+
+        return preferred || voices[0] || null;
     }
 
     handleScanCommand(scope) {
@@ -378,30 +543,49 @@ class VoiceIntegration {
     }
 
     updateVoiceButtonState() {
+        console.log('🔘 updateVoiceButtonState() - isListening:', this.isListening);
         const btn = document.getElementById('voiceControlBtn');
-        if (btn) {
-            if (this.isListening) {
-                btn.classList.add('listening');
-                btn.innerHTML = '<i class="fas fa-microphone-slash"></i> Stop Listening';
-            } else {
-                btn.classList.remove('listening');
-                btn.innerHTML = '<i class="fas fa-microphone"></i> Start Listening';
-            }
+        
+        if (!btn) {
+            console.warn('🔘 Voice button not found in DOM');
+            return;
+        }
+
+        console.log('✅ Voice button found, updating state...');
+        if (this.isListening) {
+            btn.classList.add('listening');
+            btn.innerHTML = '<i class="fas fa-microphone-slash"></i> Stop Listening';
+            console.log('🔘 Button set to: STOP LISTENING');
+        } else {
+            btn.classList.remove('listening');
+            btn.innerHTML = '<i class="fas fa-microphone"></i> Start Listening';
+            console.log('🔘 Button set to: START LISTENING');
         }
     }
 
     addVoiceButton() {
+        console.log('🔘 addVoiceButton() called');
+        
         const voiceContainer = document.getElementById('voiceNavigationContainer');
         if (!voiceContainer) {
-            console.warn('voiceNavigationContainer not found');
+            console.warn('🔘 voiceNavigationContainer element NOT FOUND in DOM');
+            console.log('🔘 Looking for parent elements...');
+            const navbar = document.querySelector('nav');
+            const header = document.querySelector('header');
+            console.log('  - nav found:', !!navbar);
+            console.log('  - header found:', !!header);
             return;
         }
+
+        console.log('✅ voiceNavigationContainer found');
 
         // Check if button already exists
         if (document.getElementById('voiceControlBtn')) {
+            console.log('🔘 Voice button already exists, skipping creation');
             return;
         }
 
+        console.log('🔘 Creating new voice button...');
         const btn = document.createElement('button');
         btn.id = 'voiceControlBtn';
         btn.className = 'btn btn-link text-white voice-control-btn';
@@ -411,8 +595,25 @@ class VoiceIntegration {
         btn.style.cursor = 'pointer';
 
         btn.addEventListener('click', (e) => {
+            console.log('🔘 Voice button CLICKED! Event details:', {
+                type: e.type,
+                button: e.button,
+                timeStamp: e.timeStamp,
+                target: e.target.id
+            });
+            console.log('🔘 Current state:', {
+                isListening: this.isListening,
+                isStarting: this.isStarting,
+                recognitionExists: !!this.recognition
+            });
+            console.log('🔘 About to call toggleListening()');
             e.preventDefault();
-            this.toggleListening();
+            try {
+                this.toggleListening();
+                console.log('🔘 toggleListening() completed successfully');
+            } catch (err) {
+                console.error('🔘 ERROR in toggleListening():', err);
+            }
         });
 
         voiceContainer.appendChild(btn);
@@ -420,6 +621,7 @@ class VoiceIntegration {
     }
 
     showFeedback(message, type = 'info') {
+        console.log(`📢 showFeedback() called: [${type.toUpperCase()}] ${message}`);
         // Show notification/feedback to user
         const notification = document.createElement('div');
         notification.className = `voice-feedback ${type}`;
@@ -468,28 +670,41 @@ class VoiceIntegration {
                 }
             `;
             document.head.appendChild(style);
+            console.log('📢 Feedback styles added to page');
         }
 
         document.body.appendChild(notification);
+        console.log('📢 Feedback notification added to DOM');
 
         setTimeout(() => {
+            console.log('📢 Showing feedback notification');
             notification.classList.add('show');
         }, 100);
 
         setTimeout(() => {
+            console.log('📢 Hiding feedback notification');
             notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
+            setTimeout(() => {
+                notification.remove();
+                console.log('📢 Feedback notification removed from DOM');
+            }, 300);
         }, 3000);
     }
 }
 
 // Initialize when DOM is ready
+console.log('🔧 voice_integration.js loaded, document.readyState:', document.readyState);
+
 if (document.readyState === 'loading') {
+    console.log('🔧 DOM still loading, waiting for DOMContentLoaded event...');
     document.addEventListener('DOMContentLoaded', () => {
+        console.log('📢 DOMContentLoaded fired, creating VoiceIntegration instance...');
         window.voiceIntegration = new VoiceIntegration();
-        console.log('VoiceIntegration created on DOMContentLoaded');
+        console.log('✅ VoiceIntegration instance created and assigned to window.voiceIntegration');
     });
 } else {
+    console.log('🔧 DOM already loaded, creating VoiceIntegration instance immediately...');
     window.voiceIntegration = new VoiceIntegration();
-    console.log('VoiceIntegration created immediately');
+    console.log('✅ VoiceIntegration instance created and assigned to window.voiceIntegration');
 }
+

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Accessibility Translator",
-  "version": "1.0.0",
-  "description": "Advanced accessibility tools for visually impaired users - Text-to-speech, object scanning, and color filters",
+  "version": "2.0.0",
+  "description": "Advanced accessibility tools for visually impaired users - Text-to-speech, object scanning, voice control, and color filters",
   "permissions": [
     "activeTab",
     "storage",
@@ -12,7 +12,8 @@
   ],
   "host_permissions": [
     "https://*/*",
-    "http://*/*"
+    "http://*/*",
+    "file:///*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -21,8 +22,8 @@
     {
       "matches": ["<all_urls>"],
       "js": ["scripts/voice_commands.js", "content.js"],
-      "css": ["styles/bubble.css", "styles/animation.css"],
-      "run_at": "document_end"
+      "css": ["styles/bubble.css", "styles/animation.css", "styles/extension-interface.css"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
@@ -41,8 +42,11 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["assets/*", "styles/*", "libs/*"],
+      "resources": ["assets/*", "styles/*", "libs/*", "scripts/*"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com;"
+  }
 }

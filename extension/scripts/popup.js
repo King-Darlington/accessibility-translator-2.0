@@ -1,25 +1,80 @@
 // Main popup script for Accessibility Translator Extension
 
+// Ensure chrome API is available and create a fallback if needed
+if (typeof chrome === 'undefined' || !chrome.runtime) {
+    console.warn('Chrome extension API not available in this context');
+    window.chrome = window.chrome || {};
+    window.chrome.runtime = {
+        lastError: null,
+        sendMessage: () => Promise.resolve({}),
+        onMessage: { addListener: () => {} }
+    };
+    window.chrome.storage = {
+        sync: { get: (key, cb) => cb({}), set: () => {} },
+        session: { get: () => Promise.resolve({}), remove: () => Promise.resolve({}) }
+    };
+    window.chrome.tabs = {
+        query: () => Promise.resolve([])
+    };
+}
+
 class PopupManager {
     constructor() {
         this.currentTab = null;
         this.activeTab = 'tts';
         this.isInitialized = false;
-        this.messageTimeout = 5000; // 5 second timeout for messages
+        this.messageTimeout = 2000; // Reduced from 5000 to 2000ms
         this.init();
     }
 
     async init() {
+        console.log('[AT] PopupManager initialization started');
         try {
             await this.getCurrentTab();
+            console.log('[AT] Current tab retrieved');
+
             this.setupEventListeners();
+            console.log('[AT] Event listeners set up');
+
             await this.loadSettings();
+            console.log('[AT] Settings loaded');
+
             await this.initializeTTS();
+            console.log('[AT] TTS initialized');
+
             await this.checkConnectionStatus();
+            console.log('[AT] Connection status checked');
+
+            this.setupLoginModal();
+            console.log('[AT] Login modal set up');
+
+            // Check if a specific tab was requested from the bubble/content script
+            try {
+                const stored = await chrome.storage.session.get(['requestedTab']);
+                if (stored && stored.requestedTab) {
+                    const requestedTab = stored.requestedTab;
+                    console.log(`[AT] Requested tab found: ${requestedTab}`);
+                    // Clear the stored request
+                    await chrome.storage.session.remove(['requestedTab']);
+                    // Switch to the requested tab without activating the feature
+                    setTimeout(() => {
+                        this.switchTab(requestedTab, false);
+                    }, 100);
+                } else {
+                    // Ensure TTS tab is initialized and active by default without activating the feature
+                    this.switchTab('tts', false);
+                    console.log('[AT] Switched to default TTS tab');
+                }
+            } catch (error) {
+                console.warn('[AT] Could not check for requested tab:', error);
+                // Ensure TTS tab is active even if there's an error
+                this.switchTab('tts', false);
+            }
+
             this.isInitialized = true;
-            console.log('PopupManager initialized successfully');
+            console.log('[AT] PopupManager initialized successfully');
         } catch (error) {
-            console.error('PopupManager initialization error:', error);
+            console.error('[AT] PopupManager initialization error:', error);
             this.showNotification('Extension initialization failed', 'error');
         }
     } 
@@ -49,6 +104,11 @@ class PopupManager {
                     this.showNotification('Failed to switch tab', 'error');
                 }
             });
+        });
+
+        // Keyboard shortcuts for tab navigation
+        document.addEventListener('keydown', (e) => {
+            this.handlePopupKeyboardShortcuts(e);
         });
 
         // Header logo (eye) click: jump to Filters page
@@ -144,13 +204,10 @@ class PopupManager {
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const filterCard = e.currentTarget.closest('.filter-card');
-                if (filterCard) {
-                    const filter = filterCard.getAttribute('data-filter');
-                    if (filter) {
-                        this.applyColorFilter(filter)
-                            .catch(err => console.error(`Filter ${filter} error:`, err));
-                    }
+                const filter = e.currentTarget.getAttribute('data-filter');
+                if (filter) {
+                    this.applyColorFilter(filter)
+                        .catch(err => console.error(`Filter ${filter} error:`, err));
                 }
             });
         });
@@ -194,8 +251,10 @@ class PopupManager {
         }
     }
 
-    switchTab(tabName) {
+    switchTab(tabName, shouldActivate = true) {
+        console.log(`[AT] Switching to tab: ${tabName} (shouldActivate=${shouldActivate})`);
         if (!tabName) {
+            console.error('[AT] Tab name is required');
             throw new Error('Tab name is required');
         }
 
@@ -217,11 +276,98 @@ class PopupManager {
         const activeContent = document.getElementById(tabName);
         if (activeContent) {
             activeContent.classList.add('active');
+            
+            console.log(`[AT] Switched to tab: ${tabName}`);
         }
 
         // Update selector position
         this.updateNavSelector(tabName);
         this.activeTab = tabName;
+
+        // Activate the corresponding feature on the page when requested
+        if (shouldActivate) {
+            this.activateFeature(tabName);
+        }
+    }
+
+    async activateFeature(tabName) {
+        console.log(`[AT] Activating feature: ${tabName}`);
+        try {
+            // Always get the current active tab
+            const currentTab = await this.getCurrentTab();
+            if (!currentTab || !currentTab.id) {
+                console.warn('[AT] No active tab available for feature activation');
+                return;
+            }
+
+            // Check if the tab URL is supported
+            if (!currentTab.url || (!currentTab.url.startsWith('http://') && !currentTab.url.startsWith('https://'))) {
+                console.log(`[AT] Feature activation skipped - unsupported URL: ${currentTab.url}`);
+                this.showNotification('Features are not available on this page type', 'warning');
+                return;
+            }
+
+            // Inject feature code directly into the page
+            const actionMap = {
+                'tts': this.injectTTS,
+                'scanning': this.injectScanning,
+                'filters': this.injectFilters,
+                'voice': this.injectVoice
+            };
+
+            const injectFunction = actionMap[tabName];
+            if (injectFunction) {
+                await injectFunction.call(this, currentTab.id);
+                console.log(`[AT] Activated feature: ${tabName} on tab ${currentTab.id}`);
+                this.showNotification(`${tabName} feature activated`, 'success');
+            }
+        } catch (error) {
+            console.warn(`[AT] Could not activate feature ${tabName}:`, error.message);
+            this.showNotification(`Could not activate ${tabName} feature`, 'error');
+        }
+    }
+
+    async injectTTS(tabId) {
+        // Inject TTS functionality
+        const code = `
+            (function() {
+                // Extract page text
+                const pageText = document.body.innerText || document.body.textContent || '';
+                if (pageText.trim()) {
+                    // Use Web Speech API
+                    if ('speechSynthesis' in window) {
+                        const utterance = new SpeechSynthesisUtterance(pageText.substring(0, 5000)); // Limit to first 5000 chars
+                        window.speechSynthesis.speak(utterance);
+                    }
+                }
+            })();
+        `;
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            func: () => {
+                const pageText = document.body.innerText || document.body.textContent || '';
+                if (pageText.trim() && 'speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(pageText.substring(0, 5000));
+                    window.speechSynthesis.speak(utterance);
+                }
+            }
+        });
+    }
+
+    async injectScanning(tabId) {
+        // Notify user that scanning is available
+        console.log('[AT] Object scanning tab activated - camera and OCR features available');
+        // The UI is already displayed in the popup, no additional injection needed
+    }
+
+    async injectFilters(tabId) {
+        // Feature UI is already displayed in popup, no injection needed
+        console.log('[AT] Color filters tab activated');
+    }
+
+    async injectVoice(tabId) {
+        // Feature UI is already displayed in popup, no injection needed
+        console.log('[AT] Voice control tab activated');
     }
 
     updateNavSelector(tabName) {
@@ -253,30 +399,47 @@ class PopupManager {
 
     async getVoices() {
         try {
-            // Use Web Speech API instead of non-existent chrome.tts API
             if (!window.speechSynthesis) {
                 console.warn('Web Speech API not available');
                 return [];
             }
-            
+
             return new Promise((resolve) => {
-                const timeout = setTimeout(() => {
-                    console.warn('Voices request timed out');
-                    resolve([]);
-                }, this.messageTimeout);
-                
-                // Get available voices from speechSynthesis
+                let resolved = false;
+                const MAX_VOICE_TIMEOUT = 5000;
+
+                const finish = (voices) => {
+                    if (!resolved) {
+                        resolved = true;
+                        clearTimeout(timeoutId);
+                        if (voiceListener) {
+                            window.speechSynthesis.removeEventListener('voiceschanged', voiceListener);
+                        }
+                        resolve(voices || []);
+                    }
+                };
+
                 const getAvailableVoices = () => {
                     const voices = window.speechSynthesis.getVoices();
-                    clearTimeout(timeout);
-                    resolve(voices || []);
+                    if (voices && voices.length > 0) {
+                        finish(voices);
+                    }
                 };
-                
-                // Voices may not be loaded immediately
+
+                const voiceListener = () => {
+                    getAvailableVoices();
+                };
+
+                const timeoutId = setTimeout(() => {
+                    console.warn(`Voices request timed out after ${MAX_VOICE_TIMEOUT}ms`);
+                    finish(window.speechSynthesis.getVoices() || []);
+                }, MAX_VOICE_TIMEOUT);
+
+                window.speechSynthesis.addEventListener('voiceschanged', voiceListener);
+
+                // Browse voices one last time in case they are already loaded
                 if (window.speechSynthesis.getVoices().length > 0) {
                     getAvailableVoices();
-                } else {
-                    window.speechSynthesis.onvoiceschanged = getAvailableVoices;
                 }
             });
         } catch (err) {
@@ -310,7 +473,7 @@ class PopupManager {
         return new Promise((resolve) => {
             try {
                 chrome.storage.sync.get('tts', (result) => {
-                    if (chrome.runtime.lastError) {
+                    if (chrome.runtime && chrome.runtime.lastError) {
                         console.warn('Storage error:', chrome.runtime.lastError);
                         resolve({});
                     } else {
@@ -366,7 +529,7 @@ class PopupManager {
 
                 chrome.storage.sync.set({ tts: updated }, () => {
                     clearTimeout(timeout);
-                    if (chrome.runtime.lastError) {
+                    if (chrome.runtime && chrome.runtime.lastError) {
                         reject(chrome.runtime.lastError);
                     } else {
                         resolve();
@@ -381,6 +544,7 @@ class PopupManager {
     }
 
     async readEntirePage() {
+        console.log('[AT] Reading entire page');
         try {
             if (!this.currentTab || !this.currentTab.id) {
                 throw new Error('No active tab available');
@@ -388,19 +552,22 @@ class PopupManager {
 
             // Try to inject content script if not present
             await this.ensureContentScriptLoaded(this.currentTab.id);
+            console.log(`[AT] Content script ensured for page reading on tab ${this.currentTab.id}`);
 
             const response = await this.sendMessageWithTimeout(this.currentTab.id, {
                 action: 'extractPageText'
             });
 
             if (response && response.text) {
+                console.log(`[AT] Page text extracted, length: ${response.text.length}`);
                 await this.speakText(response.text);
                 this.showNotification('Reading page...', 'success');
             } else {
+                console.log('[AT] No text extracted from page');
                 throw new Error('No text extracted from page');
             }
         } catch (error) {
-            console.error('Error reading page:', error);
+            console.error('[AT] Error reading page:', error);
             this.showNotification('Could not read page content', 'error');
         }
     }
@@ -409,17 +576,46 @@ class PopupManager {
         try {
             // Test if content script is loaded by sending a ping
             await this.sendMessageWithTimeout(tabId, { action: 'ping' }, 1000);
+            return true;
         } catch (error) {
-            // Content script not loaded, try to inject it
+            console.warn('[AT] Ping failed, injecting content script:', error);
             try {
-                await chrome.scripting.executeScript({
-                    target: { tabId },
-                    files: ['content.js']
-                });
-                // Wait for content script to initialize
-                await new Promise(r => setTimeout(r, 250));
+                // Inject all required CSS files first
+                const cssFiles = [
+                    'styles/bubble.css',
+                    'styles/animation.css',
+                    'styles/extension-interface.css'
+                ];
+
+                for (const cssFile of cssFiles) {
+                    await chrome.scripting.insertCSS({
+                        target: { tabId },
+                        files: [cssFile]
+                    });
+                }
+
+                // Inject all required JS files
+                const jsFiles = [
+                    'scripts/voice_commands.js',
+                    'content.js'
+                ];
+
+                for (const jsFile of jsFiles) {
+                    await chrome.scripting.executeScript({
+                        target: { tabId },
+                        files: [jsFile]
+                    });
+                }
+
+                // Wait for scripts to initialize
+                await new Promise(r => setTimeout(r, 500));
+
+                // Test again
+                await this.sendMessageWithTimeout(tabId, { action: 'ping' }, 2000);
+                return true;
             } catch (injectionError) {
-                console.warn('Could not inject content script:', injectionError);
+                console.warn('[AT] Could not inject content script:', injectionError);
+                return false;
             }
         }
     }
@@ -433,7 +629,7 @@ class PopupManager {
             try {
                 chrome.tabs.sendMessage(tabId, message, (response) => {
                     clearTimeout(timeoutId);
-                    if (chrome.runtime.lastError) {
+                    if (chrome.runtime && chrome.runtime.lastError) {
                         reject(chrome.runtime.lastError);
                     } else {
                         resolve(response);
@@ -447,10 +643,16 @@ class PopupManager {
     }
 
     stopSpeech() {
-        if (chrome.tts && typeof chrome.tts.stop === 'function') {
-            chrome.tts.stop();
-        } else {
-            console.warn('chrome.tts.stop is not available in this context');
+        try {
+            // Use Web Speech API to stop speech
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+                console.log('Speech stopped');
+            } else {
+                console.warn('Web Speech API not available');
+            }
+        } catch (error) {
+            console.error('Error stopping speech:', error);
         }
     }
 
@@ -496,10 +698,16 @@ class PopupManager {
                 action: 'extractPageHeaders'
             });
 
-            if (response && response.headers) {
-                const headersText = response.headers.join('. ');
-                await this.speakText(headersText);
-                this.showNotification('Reading page headers...', 'success');
+            if (response && response.headers && Array.isArray(response.headers)) {
+                // Convert header objects to readable text with level indication
+                const headersText = response.headers
+                    .map(header => `Heading ${header.level}: ${header.text}`)
+                    .join('. ');
+                
+                if (headersText) {
+                    await this.speakText(headersText);
+                    this.showNotification(`Found ${response.headers.length} headings`, 'success');
+                }
             }
         } catch (error) {
             console.error('Error reading headers:', error);
@@ -513,10 +721,16 @@ class PopupManager {
                 action: 'extractPageLinks'
             });
 
-            if (response && response.links) {
-                const linksText = response.links.join('. ');
-                await this.speakText(linksText);
-                this.showNotification('Reading links...', 'success');
+            if (response && response.links && Array.isArray(response.links)) {
+                // Convert link objects to readable text
+                const linksText = response.links
+                    .map(link => `${link.text || 'Link'}: ${link.href}`)
+                    .join('. ');
+                
+                if (linksText) {
+                    await this.speakText(linksText);
+                    this.showNotification(`Found ${response.links.length} links`, 'success');
+                }
             }
         } catch (error) {
             console.error('Error reading links:', error);
@@ -530,10 +744,16 @@ class PopupManager {
                 action: 'extractImageAlts'
             });
 
-            if (response && response.alts) {
-                const altsText = response.alts.join('. ');
-                await this.speakText(altsText);
-                this.showNotification('Reading image descriptions...', 'success');
+            if (response && response.alts && Array.isArray(response.alts)) {
+                // Convert image objects to readable text
+                const altsText = response.alts
+                    .map(img => img.alt || 'Image without description')
+                    .join('. ');
+                
+                if (altsText) {
+                    await this.speakText(altsText);
+                    this.showNotification(`Found ${response.alts.length} images`, 'success');
+                }
             }
         } catch (error) {
             console.error('Error reading images:', error);
@@ -559,7 +779,27 @@ class PopupManager {
         }
     }
 
+    getPreferredAfricanVoice(voices) {
+        if (!voices || !voices.length) return null;
+
+        const normalized = (s) => (s || '').toLowerCase();
+
+        let preferred = voices.find(v => normalized(v.lang) === 'en-ng');
+        if (!preferred) {
+            preferred = voices.find(v => normalized(v.name).includes('nigerian') || normalized(v.name).includes('african'));
+        }
+        if (!preferred) {
+            preferred = voices.find(v => normalized(v.lang).startsWith('en-') && (normalized(v.name).includes('africa') || normalized(v.name).includes('afro')));
+        }
+        if (!preferred) {
+            preferred = voices.find(v => normalized(v.lang) === 'en-gb' || normalized(v.lang) === 'en-us');
+        }
+
+        return preferred || voices[0] || null;
+    }
+
     async speakText(text) {
+        console.log(`[AT] Speaking text, length: ${text?.length || 0}`);
         try {
             if (!text || typeof text !== 'string') {
                 throw new Error('Invalid text provided');
@@ -571,70 +811,82 @@ class PopupManager {
 
             // Cancel any ongoing speech
             window.speechSynthesis.cancel();
+            console.log('[AT] Cancelled any ongoing speech');
 
             const settings = await this.getTTSSettings();
             const utterance = new SpeechSynthesisUtterance(text.trim());
-            
+
             // Apply TTS settings
             utterance.rate = settings.rate || 1;
             utterance.pitch = settings.pitch || 1;
             utterance.volume = settings.volume || 1;
-            
-            // Apply voice if available
+            console.log(`[AT] Applied TTS settings: rate=${utterance.rate}, pitch=${utterance.pitch}, volume=${utterance.volume}`);
+
+            const voices = window.speechSynthesis.getVoices();
+            let selectedVoice = null;
             if (settings.voice) {
-                const voices = window.speechSynthesis.getVoices();
-                const selectedVoice = voices.find(v => v.name === settings.voice || v.voiceName === settings.voice);
-                if (selectedVoice) {
-                    utterance.voice = selectedVoice;
-                }
+                selectedVoice = voices.find(v => v.name === settings.voice || v.voiceName === settings.voice || v.lang === settings.voice);
             }
 
-            // Speak the text
+            if (!selectedVoice) {
+                selectedVoice = this.getPreferredAfricanVoice(voices);
+            }
+
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+                console.log(`[AT] Selected voice: ${selectedVoice.name} (${selectedVoice.lang})`);
+            }
+
             window.speechSynthesis.speak(utterance);
+            console.log('[AT] Started speech synthesis');
         } catch (error) {
-            console.error('Error speaking text:', error);
+            console.error('[AT] Error speaking text:', error);
             throw error;
         }
     }
 
     async applyColorFilter(filter) {
+        console.log(`[AT] Applying color filter: ${filter}`);
         try {
             if (!filter || typeof filter !== 'string') {
                 throw new Error('Invalid filter specified');
             }
 
             if (!this.currentTab || !this.currentTab.id) {
+                console.log('[AT] No active tab available for filter application');
                 this.showNotification('No active tab available to apply filter', 'error');
                 return;
             }
 
             // Ensure content script is loaded
-            await this.ensureContentScriptLoaded(this.currentTab.id);
+            const contentLoaded = await this.ensureContentScriptLoaded(this.currentTab.id);
+            if (!contentLoaded) {
+                console.error('[AT] Content script could not be loaded for filter application');
+                this.showNotification('Could not apply filter. Content script not loaded.', 'error');
+                return;
+            }
+            console.log(`[AT] Content script ensured for tab ${this.currentTab.id}`);
 
             // Apply filter with timeout
             await this.sendMessageWithTimeout(this.currentTab.id, {
                 action: 'applyFilter',
                 filter: filter
             });
+            console.log(`[AT] Filter ${filter} applied successfully`);
 
             // Update UI feedback
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.textContent = 'Activate';
                 btn.classList.remove('active');
             });
 
-            const filterCard = document.querySelector(`[data-filter="${filter}"]`);
-            if (filterCard) {
-                const activeBtn = filterCard.querySelector('.filter-btn');
-                if (activeBtn) {
-                    activeBtn.textContent = 'Active';
-                    activeBtn.classList.add('active');
-                }
+            const activeButton = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
+            if (activeButton) {
+                activeButton.classList.add('active');
             }
 
             this.showNotification(`Applied ${filter} filter`, 'success');
         } catch (error) {
-            console.error('Error applying filter:', error);
+            console.error(`[AT] Error applying filter ${filter}:`, error);
             this.showNotification('Could not apply filter. The page may not support the extension.', 'error');
         }
     }
@@ -665,14 +917,25 @@ class PopupManager {
                 throw new Error('No active tab available');
             }
 
+            // Ensure content script is loaded
+            const contentLoaded = await this.ensureContentScriptLoaded(this.currentTab.id);
+            if (!contentLoaded) {
+                throw new Error('Content script not loaded');
+            }
+
+            // Send message to start voice control in content script
+            await this.sendMessageWithTimeout(this.currentTab.id, {
+                action: 'startVoiceControl'
+            }, 3000);
+
             const toggleBtn = document.getElementById('voiceToggle');
             if (toggleBtn) {
                 toggleBtn.classList.add('listening');
-                toggleBtn.textContent = 'Listening...';
+                toggleBtn.textContent = '⏹ Stop Voice';
                 toggleBtn.setAttribute('aria-pressed', 'true');
             }
 
-            this.showNotification('Voice control started. Say a command...', 'info');
+            this.showNotification('🎤 listening... say a command', 'info');
         } catch (error) {
             console.error('Start voice control error:', error);
             this.showNotification('Could not start voice control', 'error');
@@ -681,35 +944,64 @@ class PopupManager {
 
     async stopVoiceControl() {
         try {
+            if (this.currentTab && this.currentTab.id) {
+                // Send message to stop voice control in content script
+                await this.sendMessageWithTimeout(this.currentTab.id, {
+                    action: 'stopVoiceControl'
+                }, 3000).catch(err => console.debug('Stop voice control message error:', err));
+            }
+
             const toggleBtn = document.getElementById('voiceToggle');
             if (toggleBtn) {
                 toggleBtn.classList.remove('listening');
-                toggleBtn.textContent = 'Start Voice Control';
+                toggleBtn.textContent = '🎤 Start Voice';
                 toggleBtn.setAttribute('aria-pressed', 'false');
             }
 
-            this.showNotification('Voice control stopped', 'info');
+            this.showNotification('🎤 Voice control stopped', 'info');
         } catch (error) {
             console.error('Stop voice control error:', error);
         }
     }
 
     async syncWithMainSite() {
+        console.log('[AT] Starting sync with main site');
         try {
             const settings = await this.getAllSettings();
-            const syncResult = await chrome.runtime.sendMessage({
+            console.log(`[AT] Retrieved ${Object.keys(settings).length} settings for sync`);
+
+            const syncResult = await this.sendRuntimeMessage({
                 action: 'syncWithMain',
                 data: settings
             });
             
             if (syncResult && syncResult.success) {
+                console.log('[AT] Sync with main site successful');
                 this.showNotification('Synced with main site', 'success');
             } else {
+                console.log('[AT] Sync with main site failed:', syncResult);
                 throw new Error('Sync failed on background process');
             }
         } catch (error) {
-            console.error('Sync failed:', error);
+            console.error('[AT] Sync failed:', error);
             this.showNotification('Sync failed. Check your connection.', 'error');
+        }
+    }
+
+    async sendRuntimeMessage(message) {
+        /**
+         * Safely send a message to the background script
+         * Includes error handling for when chrome.runtime is not available
+         */
+        try {
+            if (!chrome || !chrome.runtime || !chrome.runtime.sendMessage) {
+                console.warn('Chrome runtime not available for messaging', message);
+                return { success: false, error: 'chrome.runtime not available' };
+            }
+            return await chrome.runtime.sendMessage(message);
+        } catch (error) {
+            console.error('Error sending runtime message:', error, message);
+            return { success: false, error: error.message };
         }
     }
 
@@ -717,7 +1009,7 @@ class PopupManager {
         return new Promise((resolve) => {
             try {
                 chrome.storage.sync.get(null, (result) => {
-                    if (chrome.runtime.lastError) {
+                    if (chrome.runtime && chrome.runtime.lastError) {
                         console.warn('Storage error:', chrome.runtime.lastError);
                         resolve({});
                     } else {
@@ -734,33 +1026,255 @@ class PopupManager {
     async checkConnectionStatus() {
         try {
             const status = await new Promise((resolve) => {
-                chrome.storage.sync.get('mainSiteConnected', (result) => {
-                    if (chrome.runtime.lastError) {
+                chrome.storage.sync.get(['mainSiteConnected', 'extensionUser'], (result) => {
+                    if (chrome.runtime && chrome.runtime.lastError) {
                         console.warn('Storage error:', chrome.runtime.lastError);
-                        resolve(false);
+                        resolve({ connected: false });
                     } else {
-                        resolve(result.mainSiteConnected || false);
+                        resolve({
+                            connected: result.mainSiteConnected || false,
+                            user: result.extensionUser || null
+                        });
                     }
                 });
             });
 
             const statusElement = document.getElementById('connectionStatus');
-            if (statusElement) {
-                const statusDot = statusElement.querySelector('.status-dot');
-                const statusText = statusElement.querySelector('span');
-                
-                if (statusDot && statusText) {
-                    if (status) {
-                        statusDot.classList.remove('offline');
-                        statusText.textContent = 'Connected to Main Site';
-                    } else {
-                        statusDot.classList.add('offline');
-                        statusText.textContent = 'Disconnected from Main Site';
-                    }
+            const statusDot = statusElement?.querySelector('.status-dot');
+            const statusText = document.getElementById('status-text');
+            const connectBtn = document.getElementById('connect-btn');
+
+            if (statusDot && statusText) {
+                if (status.connected && status.user) {
+                    statusDot.classList.remove('offline');
+                    statusText.textContent = `Connected as ${status.user.name}`;
+                    if (connectBtn) connectBtn.style.display = 'none';
+                } else {
+                    statusDot.classList.add('offline');
+                    statusText.textContent = 'Not Connected';
+                    if (connectBtn) connectBtn.style.display = 'inline-flex';
                 }
+            }
+
+            // Auto-refresh connection status every 30 seconds
+            if (!window.connectionStatusRefreshInterval) {
+                window.connectionStatusRefreshInterval = setInterval(() => {
+                    this.checkConnectionStatus().catch(err => 
+                        console.debug('Auto-refresh connection status failed:', err)
+                    );
+                }, 30000);
             }
         } catch (error) {
             console.error('Connection status check error:', error);
+        }
+    }
+
+    setupLoginModal() {
+        const loginForm = document.getElementById('extension-login-form');
+        const connectBtn = document.getElementById('connect-btn');
+        const loginModal = document.getElementById('login-modal');
+        const loginCloseBtn = document.getElementById('login-close-btn');
+
+        if (connectBtn) {
+            connectBtn.addEventListener('click', async () => {
+                // First check if user is logged in on main site
+                await this.verifyMainSiteSession();
+                if (loginModal) loginModal.style.display = 'flex';
+            });
+        }
+
+        if (loginCloseBtn) {
+            loginCloseBtn.addEventListener('click', () => {
+                if (loginModal) loginModal.style.display = 'none';
+                this.clearLoginForm();
+            });
+        }
+
+        if (loginModal) {
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    loginModal.style.display = 'none';
+                    this.clearLoginForm();
+                }
+            });
+        }
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.handleExtensionLogin();
+            });
+        }
+    }
+
+    async verifyMainSiteSession() {
+        try {
+            // Try to get main site URL from different sources
+            let mainSiteUrl = null;
+
+            // First, try to get it from saved preferences
+            const storageData = await new Promise((resolve) => {
+                chrome.storage.sync.get(['mainSiteUrl'], resolve);
+            });
+            
+            if (storageData?.mainSiteUrl) {
+                mainSiteUrl = storageData.mainSiteUrl;
+            } else {
+                // For development, use localhost
+                mainSiteUrl = 'http://localhost/accessibility-translator-2.0';
+            }
+
+            const response = await fetch(`${mainSiteUrl}/api/auth/check-session.php`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include',
+                mode: 'cors'
+            });
+
+            const data = await response.json();
+            
+            if (data.success && data.isLoggedIn) {
+                console.log('User is logged in on main site:', data.user);
+                return true;
+            } else {
+                console.warn('User not logged in on main site');
+                return false;
+            }
+        } catch (error) {
+            console.warn('Main site session verification failed:', error.message);
+            // If verification fails, allow login to proceed (connection issue or site offline)
+            return true;
+        }
+    }
+
+    async handleExtensionLogin() {
+        console.log('[AT] Starting extension login process');
+        const email = document.getElementById('login-email')?.value.trim();
+        const password = document.getElementById('login-password')?.value;
+        const submitBtn = document.getElementById('login-submit-btn');
+        const errorDiv = document.getElementById('login-error');
+
+        if (!email || !password) {
+            console.log('[AT] Login validation failed: missing email or password');
+            this.showLoginError('Email and password are required');
+            return;
+        }
+
+        if (submitBtn) submitBtn.disabled = true;
+        if (errorDiv) errorDiv.style.display = 'none';
+        console.log('[AT] Login form validated, attempting authentication');
+
+        try {
+            // Get main site URL 
+            let mainSiteUrl = 'http://localhost/accessibility-translator-2.0';
+            const storageData = await new Promise((resolve) => {
+                chrome.storage.sync.get(['mainSiteUrl'], resolve);
+            });
+            if (storageData?.mainSiteUrl) {
+                mainSiteUrl = storageData.mainSiteUrl;
+            }
+            console.log(`[AT] Using main site URL: ${mainSiteUrl}`);
+
+            const response = await fetch(`${mainSiteUrl}/api/auth/extension-login.php`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ email, password }),
+                credentials: 'include',
+                mode: 'cors'
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                console.log(`[AT] Login HTTP error: ${response.status}`, data);
+                throw new Error(data.error || 'Login failed');
+            }
+
+            const data = await response.json();
+            if (!data.success) {
+                console.log('[AT] Login API error:', data);
+                throw new Error(data.error || 'Login failed');
+            }
+
+            console.log('[AT] Login successful, storing user data');
+            // Store connection data in chrome storage
+            await new Promise((resolve) => {
+                chrome.storage.sync.set({
+                    mainSiteConnected: true,
+                    mainSiteUrl: mainSiteUrl,
+                    extensionUser: data.user,
+                    extensionToken: data.token,
+                    tokenExpiry: data.tokenExpiry,
+                    userPreferences: data.preferences
+                }, resolve);
+            });
+
+            // Apply user preferences
+            if (data.preferences) {
+                this.applyUserPreferences(data.preferences);
+                console.log('[AT] User preferences applied');
+            }
+
+            this.showNotification(`Welcome, ${data.user.name}!`, 'success');
+            
+            // Close login modal
+            const loginModal = document.getElementById('login-modal');
+            if (loginModal) loginModal.style.display = 'none';
+
+            // Update connection status display
+            await this.checkConnectionStatus();
+            
+            this.clearLoginForm();
+
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showLoginError(error.message || 'Login failed. Please try again.');
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    }
+
+    showLoginError(message) {
+        const errorDiv = document.getElementById('login-error');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    }
+
+    clearLoginForm() {
+        const form = document.getElementById('extension-login-form');
+        if (form) form.reset();
+        const errorDiv = document.getElementById('login-error');
+        if (errorDiv) errorDiv.style.display = 'none';
+    }
+
+    applyUserPreferences(preferences) {
+        try {
+            if (!preferences) return;
+
+            // Apply TTS settings
+            if (preferences.tts_speed) {
+                const speedInput = document.getElementById('rate');
+                if (speedInput) speedInput.value = preferences.tts_speed;
+            }
+            if (preferences.tts_pitch) {
+                const pitchInput = document.getElementById('pitch');
+                if (pitchInput) pitchInput.value = preferences.tts_pitch;
+            }
+            if (preferences.tts_voice) {
+                const voiceSelect = document.getElementById('voiceSelect');
+                if (voiceSelect) voiceSelect.value = preferences.tts_voice;
+            }
+
+            // Apply other preferences as needed
+            console.log('User preferences applied');
+        } catch (error) {
+            console.warn('Error applying user preferences:', error);
         }
     }
 
@@ -842,14 +1356,63 @@ class PopupManager {
         });
     }
 
+    handlePopupKeyboardShortcuts(event) {
+        // Ctrl+1 or Cmd+1 for TTS tab
+        if ((event.ctrlKey || event.metaKey) && event.key === '1') {
+            event.preventDefault();
+            this.switchTab('tts');
+        }
+
+        // Ctrl+3 or Cmd+3 for Scanning tab
+        if ((event.ctrlKey || event.metaKey) && event.key === '3') {
+            event.preventDefault();
+            this.switchTab('scanning');
+        }
+
+        // Ctrl+4 or Cmd+4 for Filters tab
+        if ((event.ctrlKey || event.metaKey) && event.key === '4') {
+            event.preventDefault();
+            this.switchTab('filters');
+        }
+
+        // Ctrl+5 or Cmd+5 for Voice tab
+        if ((event.ctrlKey || event.metaKey) && event.key === '5') {
+            event.preventDefault();
+            this.switchTab('voice');
+        }
+
+        // Ctrl+Space or Cmd+Space for quick play all
+        if ((event.ctrlKey || event.metaKey) && event.key === ' ') {
+            event.preventDefault();
+            const playBtn = document.getElementById('playAll');
+            if (playBtn && this.activeTab === 'tts') {
+                playBtn.click();
+            }
+        }
+
+        // Escape key to close notifications
+        if (event.key === 'Escape') {
+            const notifications = document.querySelectorAll('.notification');
+            notifications.forEach(notif => {
+                try {
+                    notif.remove();
+                } catch (e) {
+                    // Already removed
+                }
+            });
+        }
+    }
+
     openOptionsPage() {
         try {
-            if (chrome.runtime && chrome.runtime.openOptionsPage) {
+            if (chrome.runtime && chrome.runtime.openOptionsPage && typeof chrome.runtime.openOptionsPage === 'function') {
                 chrome.runtime.openOptionsPage();
+            } else {
+                this.showNotification('Options page is not configured', 'info');
             }
         } catch (error) {
-            console.error('Error opening options page:', error);
-            this.showNotification('Could not open settings', 'error');
+            console.debug('Error opening options page:', error.message);
+            this.showNotification('Options page is not available', 'info');
         }
     }
 
@@ -879,11 +1442,13 @@ class PopupManager {
                 this.showNotification('No active tab available to reset filter', 'error');
                 return;
             }
-            // Remove filter from all tabs
-            await chrome.runtime.sendMessage({ action: 'removeFilter' });
-            // Update UI
+            const contentLoaded = await this.ensureContentScriptLoaded(this.currentTab.id);
+            if (!contentLoaded) {
+                this.showNotification('Could not reset filters. Content script not loaded.', 'error');
+                return;
+            }
+            await this.sendMessageWithTimeout(this.currentTab.id, { action: 'removeFilter' });
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.textContent = 'Activate';
                 btn.classList.remove('active');
             });
             this.showNotification('All color filters reset', 'success');
@@ -892,50 +1457,111 @@ class PopupManager {
             this.showNotification('Could not reset filters', 'error');
         }
     }
+
+    // Utility methods
+    async withLoadingState(element, asyncFn, loadingText = null) {
+        const originalText = element?.textContent || '';
+        const originalDisabled = element?.disabled || false;
+        
+        try {
+            if (element) {
+                element.disabled = true;
+                if (loadingText) element.textContent = loadingText;
+            }
+            
+            const result = await asyncFn();
+            
+            if (element) {
+                element.disabled = originalDisabled;
+                element.textContent = originalText;
+            }
+            
+            return result;
+        } catch (error) {
+            if (element) {
+                element.disabled = originalDisabled;
+                element.textContent = originalText;
+            }
+            throw error;
+        }
+    }
+
+    logOperation(operationName, details = {}) {
+        console.log(`[${new Date().toISOString()}] Operation: ${operationName}`, details);
+    }
+
+    logError(operationName, error) {
+        console.error(`[${new Date().toISOString()}] Error in ${operationName}:`, error);
+    }
+
+    debounce(func, wait) {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), wait);
+        };
+    }
+
+    // Method to close all modals
+    closeAllModals() {
+        try {
+            const modals = document.querySelectorAll('.modal, [role="dialog"]');
+            modals.forEach(modal => {
+                try {
+                    modal.remove();
+                } catch (e) {
+                    // Already removed
+                }
+            });
+        } catch (error) {
+            console.debug('Error closing modals:', error);
+        }
+    }
+
+    // Cleanup on popup close
+    cleanup() {
+        if (window.connectionStatusRefreshInterval) {
+            clearInterval(window.connectionStatusRefreshInterval);
+            delete window.connectionStatusRefreshInterval;
+        }
+        this.closeAllModals();
+        this.logOperation('PopupManager cleanup complete');
+    }
 }
 
-// Ensure magnification content is loaded in the correct section
-window.addEventListener('DOMContentLoaded', () => {
-    // Only inject if not already present
-    if (!document.getElementById('extension-magnification-section')) {
-        // Find the magnification tab content section
-        const magnificationSection = document.getElementById('magnification');
-        if (magnificationSection) {
-            // Create a container for the magnification UI
-            const container = document.createElement('div');
-            container.id = 'extension-popup';
-            magnificationSection.appendChild(container);
-            // Initialize the magnification UI
-            if (window.ExtensionMagnificationUI) {
-                const magnificationUI = new window.ExtensionMagnificationUI();
-                magnificationUI.init();
-            }
-        }
+// Cleanup when popup closes
+window.addEventListener('beforeunload', () => {
+    if (window.popupManager) {
+        window.popupManager.cleanup();
     }
 });
 
 // Initialize popup when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('[AT] Popup DOM loaded, initializing PopupManager');
     window.popupManager = new PopupManager();
+    window.popupManager.init();
 });
 
 // Listen for messages from content script to open specific tabs
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === 'openExtensionTab') {
-        const tabName = message.tab;
-        
-        // Valid tab names that correspond to the extension popup tabs
-        const validTabs = ['magnification', 'tts', 'scanning', 'filters', 'voice'];
-        
-        if (validTabs.includes(tabName) && window.popupManager) {
-            // Switch to the requested tab
-            window.popupManager.switchTab(tabName);
-            sendResponse({success: true, message: `Switched to ${tabName} tab`});
-        } else {
-            sendResponse({success: false, message: 'Invalid tab name'});
+if (chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === 'openExtensionTab') {
+            const tabName = message.tab;
+            
+            // Valid tab names that correspond to the extension popup tabs
+            const validTabs = ['tts', 'scanning', 'filters', 'voice'];
+            
+            if (validTabs.includes(tabName) && window.popupManager) {
+                // Switch to the requested tab
+                window.popupManager.switchTab(tabName);
+                sendResponse({success: true, message: `Switched to ${tabName} tab`});
+            } else {
+                sendResponse({success: false, message: 'Invalid tab name'});
+            }
         }
-    }
-});
+    });
+}
 
 // Add more voice control commands for accessibility
 window.addEventListener('DOMContentLoaded', () => {

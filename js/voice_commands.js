@@ -91,18 +91,40 @@
   ];
 
   function matchInput(input) {
-    if (!input || typeof input !== 'string') return null;
+    console.log('🔍 matchInput() called with input:', input);
+    
+    if (!input || typeof input !== 'string') {
+      console.log('🔍 Invalid input, returning null');
+      return null;
+    }
+    
     input = input.trim().toLowerCase();
+    console.log('🔍 Normalized input:', input);
+    console.log('🔍 Total commands to check:', commands.length);
+    
     let best = {score: 0, command: null, phrase: null};
+    let totalPhrasesChecked = 0;
 
     for (const cmd of commands) {
       for (const phrase of cmd.phrases) {
+        totalPhrasesChecked++;
         const s = scoreMatch(input, phrase);
+        
+        // Log all matches above 0.5
+        if (s > 0.5) {
+          console.log(`  [${s.toFixed(2)}] "${phrase}" (command: ${cmd.id})`);
+        }
+        
         if (s > best.score) {
           best = { score: s, command: cmd, phrase };
         }
       }
     }
+
+    console.log('🔍 Total phrases checked:', totalPhrasesChecked);
+    console.log('🔍 Best match score:', best.score.toFixed(2));
+    console.log('🔍 Best match phrase:', best.phrase);
+    console.log('🔍 Best match command:', best.command?.id);
 
     return best.command ? { score: best.score, command: best.command, phrase: best.phrase } : null;
   }
@@ -113,5 +135,8 @@
     matchInput: matchInput,
     scoreMatch: scoreMatch
   };
+
+  console.log('✅ VoiceCommandsLib loaded! Available commands:', commands.length);
+  console.log('   - Commands:', commands.map(c => c.id).join(', '));
 
 })(window);
